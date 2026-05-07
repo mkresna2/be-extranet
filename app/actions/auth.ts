@@ -8,6 +8,7 @@ import {
   loginWithBackend,
 } from "@/lib/auth";
 
+/* Action states defined outside to avoid Next.js 'use server' value export error */
 export type AuthActionState = {
   status: "idle" | "error" | "success";
   message?: string;
