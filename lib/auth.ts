@@ -1,3 +1,5 @@
+import "server-only";
+
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -41,25 +43,6 @@ export type AuthSession = {
   currentProperty: AuthProperty | null;
 };
 
-type BackendUserResponse = {
-  id: string;
-  email: string;
-  full_name: string;
-  is_active: boolean;
-  created_at: string;
-};
-
-type BackendPropertyResponse = {
-  id: string;
-  name: string;
-  description: string | null;
-  address: string;
-  city: string;
-  country: string;
-  is_active: boolean;
-  created_at: string;
-};
-
 export class BookingEngineAuthError extends Error {
   constructor(
     message: string,
@@ -70,8 +53,49 @@ export class BookingEngineAuthError extends Error {
   }
 }
 
+type ErrorWithDigest = Error & {
+  digest?: string;
+  cause?: unknown;
+};
+
 function getApiUrl(path: string) {
   return `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function asNonEmptyString(value: unknown, fallback = "") {
+  return typeof value === "string" ? value : fallback;
+}
+
+function asNullableString(value: unknown) {
+  return typeof value === "string" ? value : null;
+}
+
+function asBoolean(value: unknown) {
+  return typeof value === "boolean" ? value : false;
+}
+
+function serializePlain<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function logAuthError(
+  scope: string,
+  error: unknown,
+  extra?: Record<string, unknown>,
+) {
+  const authError = error as ErrorWithDigest;
+
+  console.error(`[auth] ${scope}`, {
+    message: authError?.message ?? String(error),
+    name: authError?.name,
+    digest: authError?.digest,
+    cause: authError?.cause,
+    ...extra,
+  });
 }
 
 async function readApiErrorMessage(response: Response, fallback: string) {
@@ -88,38 +112,100 @@ async function readApiErrorMessage(response: Response, fallback: string) {
   return fallback;
 }
 
-function mapUser(user: BackendUserResponse): AuthUser {
+function normalizeUser(value: unknown): AuthUser {
+  if (!isRecord(value)) {
+    throw new BookingEngineAuthError(
+      "Invalid user payload received from the booking-engine API.",
+      502,
+    );
+  }
+
   return {
-    id: user.id,
-    email: user.email,
-    fullName: user.full_name,
-    isActive: user.is_active,
-    createdAt: user.created_at,
+    id: asNonEmptyString(value.id),
+    email: asNonEmptyString(value.email),
+    fullName: asNonEmptyString(value.full_name),
+    isActive: asBoolean(value.is_active),
+    createdAt: asNonEmptyString(value.created_at),
   };
 }
 
-function mapProperty(property: BackendPropertyResponse): AuthProperty {
+function normalizeProperty(value: unknown): AuthProperty {
+  if (!isRecord(value)) {
+    throw new BookingEngineAuthError(
+      "Invalid property payload received from the booking-engine API.",
+      502,
+    );
+  }
+
   return {
-    id: property.id,
-    name: property.name,
-    description: property.description,
-    address: property.address,
-    city: property.city,
-    country: property.country,
-    isActive: property.is_active,
-    createdAt: property.created_at,
+    id: asNonEmptyString(value.id),
+    name: asNonEmptyString(value.name),
+    description: asNullableString(value.description),
+    address: asNonEmptyString(value.address),
+    city: asNonEmptyString(value.city),
+    country: asNonEmptyString(value.country),
+    isActive: asBoolean(value.is_active),
+    createdAt: asNonEmptyString(value.created_at),
   };
+}
+
+function normalizeTokenResponse(value: unknown): TokenResponse {
+  if (!isRecord(value)) {
+    throw new BookingEngineAuthError(
+      "Invalid token payload received from the booking-engine API.",
+      502,
+    );
+  }
+
+  const accessToken = asNonEmptyString(value.access_token);
+  const refreshToken = asNonEmptyString(value.refresh_token);
+  const tokenType = asNonEmptyString(value.token_type);
+
+  if (!accessToken || !refreshToken || !tokenType) {
+    throw new BookingEngineAuthError(
+      "Incomplete token payload received from the booking-engine API.",
+      502,
+    );
+  }
+
+  return serializePlain({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+    token_type: tokenType,
+  });
+}
+
+function normalizeProperties(value: unknown): AuthProperty[] {
+  if (!Array.isArray(value)) {
+    throw new BookingEngineAuthError(
+      "Invalid properties payload received from the booking-engine API.",
+      502,
+    );
+  }
+
+  return serializePlain(value.map(normalizeProperty));
 }
 
 export async function loginWithBackend(email: string, password: string) {
-  const response = await fetch(getApiUrl("/auth/login"), {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({ email, password }),
-    cache: "no-store",
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(getApiUrl("/auth/login"), {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+      cache: "no-store",
+    });
+  } catch (error) {
+    logAuthError("loginWithBackend.fetch", error, { email });
+
+    throw new BookingEngineAuthError(
+      "Unable to reach the booking-engine API right now. Please try again.",
+      503,
+    );
+  }
 
   if (!response.ok) {
     const message = await readApiErrorMessage(
@@ -130,7 +216,20 @@ export async function loginWithBackend(email: string, password: string) {
     throw new BookingEngineAuthError(message, response.status);
   }
 
-  return (await response.json()) as TokenResponse;
+  try {
+    return normalizeTokenResponse(await response.json());
+  } catch (error) {
+    logAuthError("loginWithBackend.parse", error, { email });
+
+    if (error instanceof BookingEngineAuthError) {
+      throw error;
+    }
+
+    throw new BookingEngineAuthError(
+      "Unable to read the booking-engine login response.",
+      502,
+    );
+  }
 }
 
 async function fetchSessionData(accessToken: string) {
@@ -138,16 +237,28 @@ async function fetchSessionData(accessToken: string) {
     Authorization: `Bearer ${accessToken}`,
   };
 
-  const [userResponse, propertiesResponse] = await Promise.all([
-    fetch(getApiUrl("/auth/me"), {
-      headers,
-      cache: "no-store",
-    }),
-    fetch(getApiUrl("/properties/my"), {
-      headers,
-      cache: "no-store",
-    }),
-  ]);
+  let userResponse: Response;
+  let propertiesResponse: Response;
+
+  try {
+    [userResponse, propertiesResponse] = await Promise.all([
+      fetch(getApiUrl("/auth/me"), {
+        headers,
+        cache: "no-store",
+      }),
+      fetch(getApiUrl("/properties/my"), {
+        headers,
+        cache: "no-store",
+      }),
+    ]);
+  } catch (error) {
+    logAuthError("fetchSessionData.fetch", error);
+
+    throw new BookingEngineAuthError(
+      "Unable to load the current session from the booking-engine API.",
+      503,
+    );
+  }
 
   if (!userResponse.ok) {
     const message = await readApiErrorMessage(
@@ -167,12 +278,29 @@ async function fetchSessionData(accessToken: string) {
     throw new BookingEngineAuthError(message, propertiesResponse.status);
   }
 
-  const user = (await userResponse.json()) as BackendUserResponse;
-  const properties = (await propertiesResponse.json()) as BackendPropertyResponse[];
+  let userPayload: unknown;
+  let propertiesPayload: unknown;
+
+  try {
+    [userPayload, propertiesPayload] = await Promise.all([
+      userResponse.json(),
+      propertiesResponse.json(),
+    ]);
+  } catch (error) {
+    logAuthError("fetchSessionData.parse", error);
+
+    throw new BookingEngineAuthError(
+      "Unable to read the current session payload from the booking-engine API.",
+      502,
+    );
+  }
+
+  const user = normalizeUser(userPayload);
+  const properties = normalizeProperties(propertiesPayload);
 
   return {
-    user: mapUser(user),
-    properties: properties.map(mapProperty),
+    user,
+    properties,
   };
 }
 
@@ -213,12 +341,12 @@ export const getSession = cache(async (): Promise<AuthSession | null> => {
   try {
     const { user, properties } = await fetchSessionData(accessToken);
 
-    return {
+    return serializePlain({
       accessToken,
       user,
       properties,
       currentProperty: properties[0] ?? null,
-    };
+    });
   } catch (error) {
     if (
       error instanceof BookingEngineAuthError &&
@@ -228,9 +356,19 @@ export const getSession = cache(async (): Promise<AuthSession | null> => {
       return null;
     }
 
+    logAuthError("getSession", error);
     throw error;
   }
 });
+
+export async function getSessionForPublicRoute() {
+  try {
+    return await getSession();
+  } catch (error) {
+    logAuthError("getSessionForPublicRoute", error);
+    return null;
+  }
+}
 
 export async function requireSession() {
   const session = await getSession();

@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { getSessionForPublicRoute } from "@/lib/auth";
 
 export default async function HomePage() {
-  const session = await getSession();
+  const session = await getSessionForPublicRoute();
 
   redirect(session ? "/dashboard" : "/login");
 }

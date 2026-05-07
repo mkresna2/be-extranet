@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LifeBuoy } from "lucide-react";
 import { RecoveryForm } from "@/components/auth/recovery-form";
-import { getSession } from "@/lib/auth";
+import { getSessionForPublicRoute } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ForgotPasswordPage() {
-  const session = await getSession();
+  const session = await getSessionForPublicRoute();
 
   if (session) {
     redirect("/dashboard");

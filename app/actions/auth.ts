@@ -36,11 +36,22 @@ export async function loginAction(
     await createSession(tokens);
   } catch (error) {
     if (error instanceof BookingEngineAuthError) {
+      console.error("[auth] loginAction", {
+        email,
+        status: error.status,
+        message: error.message,
+      });
+
       return {
         status: "error",
         message: error.message,
       };
     }
+
+    console.error("[auth] loginAction", {
+      email,
+      error,
+    });
 
     return {
       status: "error",

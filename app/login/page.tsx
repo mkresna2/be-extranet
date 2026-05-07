@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Building2, ShieldCheck } from "lucide-react";
 import { LoginForm } from "@/components/auth/login-form";
-import { getSession } from "@/lib/auth";
+import { getSessionForPublicRoute } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function LoginPage() {
-  const session = await getSession();
+  const session = await getSessionForPublicRoute();
 
   if (session) {
     redirect("/dashboard");
