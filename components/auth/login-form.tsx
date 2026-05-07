@@ -25,7 +25,8 @@ export function LoginForm() {
             name="email"
             type="email"
             className="h-full w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-            placeholder="name@hotel.com"
+            placeholder="ecommdr@gmail.com"
+            defaultValue="ecommdr@gmail.com"
             autoComplete="email"
             required
           />
@@ -51,7 +52,8 @@ export function LoginForm() {
             name="password"
             type="password"
             className="h-full w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
-            placeholder="Enter password"
+            placeholder="Extranet123!"
+            defaultValue="Extranet123!"
             autoComplete="current-password"
             required
           />
@@ -73,7 +75,8 @@ export function LoginForm() {
       <div className="space-y-3">
         <SubmitButton idleLabel="Sign in" pendingLabel="Signing in..." />
         <p className="text-sm text-slate-500">
-          Use your booking-engine partner account credentials.
+          Use your booking-engine partner account credentials. The form is
+          prefilled with the current admin login.
         </p>
       </div>
     </form>
