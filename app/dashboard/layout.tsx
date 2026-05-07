@@ -4,6 +4,7 @@ import {
   BarChart3,
   BellDot,
   CalendarRange,
+  ClipboardList,
   Hotel,
   LayoutDashboard,
   Settings2,
@@ -44,6 +45,7 @@ export default async function DashboardLayout({
 
             <nav className="space-y-2">
               <SidebarLink href="/dashboard" label="Dashboard" icon={LayoutDashboard} />
+              <SidebarLink href="/dashboard/bookings" label="Bookings" icon={ClipboardList} />
               <SidebarLink href="/dashboard/availability" label="Availability" icon={CalendarRange} />
               <SidebarLink href="/dashboard/rates" label="Rates" icon={BarChart3} />
               <SidebarLink href="/dashboard/alerts" label="Alerts" icon={BellDot} />
