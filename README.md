@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BE Extranet
 
-## Getting Started
+BE Extranet is an admin interface for the Booking Engine built with Next.js 15.
 
-First, run the development server:
+## Features
+
+- JWT Authentication
+- Property Management
+- Inventory & Rates control
+
+## Tech Stack
+
+- Next.js
+- Tailwind CSS
+- Lucide Icons
+- JWT
+
+## API Connection
+
+This project is linked to the Booking Engine API:
+
+`https://booking-engine-vq7e.onrender.com`
+
+## Installation
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. Open `http://localhost:3000` in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This project can be deployed to Vercel.
 
-## Learn More
+1. Push the project to a Git repository.
+2. Import the repository into Vercel.
+3. Configure any required environment variables.
+4. Deploy the project.
 
-To learn more about Next.js, take a look at the following resources:
+For local production testing, you can also run:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run build
+npm run start
+```
