@@ -18,10 +18,6 @@ export type AuthActionState = {
   };
 };
 
-export const initialAuthState: AuthActionState = {
-  status: "idle",
-};
-
 export async function loginAction(
   _previousState: AuthActionState,
   formData: FormData,

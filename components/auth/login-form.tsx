@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { KeyRound, Mail } from "lucide-react";
-import {
-  initialAuthState,
-  loginAction,
-} from "@/app/actions/auth";
+import { loginAction } from "@/app/actions/auth";
+
+const initialAuthState = {
+  status: "idle" as const,
+};
 import { SubmitButton } from "@/components/auth/submit-button";
 
 export function LoginForm() {

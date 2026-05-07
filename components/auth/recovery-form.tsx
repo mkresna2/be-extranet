@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { ArrowLeft, MailCheck } from "lucide-react";
-import {
-  initialAuthState,
-  recoverPasswordAction,
-} from "@/app/actions/auth";
+import { recoverPasswordAction } from "@/app/actions/auth";
+
+const initialAuthState = {
+  status: "idle" as const,
+};
 import { SubmitButton } from "@/components/auth/submit-button";
 
 export function RecoveryForm() {
