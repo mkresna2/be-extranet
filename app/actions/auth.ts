@@ -11,6 +11,10 @@ import {
 export type AuthActionState = {
   status: "idle" | "error" | "success";
   message?: string;
+  error?: {
+    message: string;
+    status?: number;
+  };
 };
 
 export const initialAuthState: AuthActionState = {
@@ -28,6 +32,9 @@ export async function loginAction(
     return {
       status: "error",
       message: "Enter both email and password.",
+      error: {
+        message: "Enter both email and password.",
+      },
     };
   }
 
@@ -45,6 +52,13 @@ export async function loginAction(
       return {
         status: "error",
         message: error.message,
+        error: {
+          message:
+            error.status === 401 || error.status === 403
+              ? "Invalid email or password."
+              : error.message,
+          status: error.status,
+        },
       };
     }
 
@@ -56,6 +70,9 @@ export async function loginAction(
     return {
       status: "error",
       message: "Unable to reach the booking-engine API right now. Please try again.",
+      error: {
+        message: "Unable to reach the booking-engine API right now. Please try again.",
+      },
     };
   }
   redirect("/dashboard");
@@ -76,6 +93,9 @@ export async function recoverPasswordAction(
     return {
       status: "error",
       message: "Enter the account email to continue.",
+      error: {
+        message: "Enter the account email to continue.",
+      },
     };
   }
 

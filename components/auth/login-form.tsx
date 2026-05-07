@@ -11,6 +11,7 @@ import { SubmitButton } from "@/components/auth/submit-button";
 
 export function LoginForm() {
   const [state, formAction] = useActionState(loginAction, initialAuthState);
+  const feedbackMessage = state.error?.message ?? state.message;
 
   return (
     <form action={formAction} className="space-y-5">
@@ -60,15 +61,17 @@ export function LoginForm() {
         </div>
       </div>
 
-      {state.message ? (
+      {feedbackMessage ? (
         <p
           className={`rounded-2xl px-4 py-3 text-sm ${
             state.status === "error"
               ? "bg-rose-50 text-rose-700"
               : "bg-emerald-50 text-emerald-700"
           }`}
+          role={state.status === "error" ? "alert" : "status"}
+          aria-live="polite"
         >
-          {state.message}
+          {feedbackMessage}
         </p>
       ) : null}
 

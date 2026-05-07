@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import {
   BarChart3,
   BellDot,
@@ -9,14 +10,19 @@ import {
 } from "lucide-react";
 import { LogoutButton } from "@/components/dashboard/logout-button";
 import { SidebarLink } from "@/components/dashboard/sidebar-link";
-import { requireSession } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  const session = await requireSession();
+  const session = await getSession();
+
+  if (!session) {
+    redirect("/login");
+  }
+
   const propertyTitle = session.currentProperty?.name ?? "No property assigned";
 
   return (
