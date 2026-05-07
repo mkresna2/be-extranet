@@ -17,6 +17,11 @@ type TokenResponse = {
   token_type: string;
 };
 
+type LoginRequest = {
+  email: string;
+  password: string;
+};
+
 export type AuthUser = {
   id: string;
   email: string;
@@ -159,9 +164,9 @@ function normalizeTokenResponse(value: unknown): TokenResponse {
 
   const accessToken = asNonEmptyString(value.access_token);
   const refreshToken = asNonEmptyString(value.refresh_token);
-  const tokenType = asNonEmptyString(value.token_type);
+  const tokenType = asNonEmptyString(value.token_type, "Bearer");
 
-  if (!accessToken || !refreshToken || !tokenType) {
+  if (!accessToken || !refreshToken) {
     throw new BookingEngineAuthError(
       "Incomplete token payload received from the booking-engine API.",
       502,
@@ -188,6 +193,7 @@ function normalizeProperties(value: unknown): AuthProperty[] {
 
 export async function loginWithBackend(email: string, password: string) {
   let response: Response;
+  const payload: LoginRequest = { email, password };
 
   try {
     response = await fetch(getApiUrl("/auth/login"), {
@@ -195,7 +201,7 @@ export async function loginWithBackend(email: string, password: string) {
       headers: {
         "content-type": "application/json",
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(payload),
       cache: "no-store",
     });
   } catch (error) {
