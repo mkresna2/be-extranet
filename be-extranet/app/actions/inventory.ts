@@ -55,8 +55,8 @@ export async function syncAvailability(
             date.setDate(today.getDate() + i);
             rates.push({
                 date: date.toISOString().split('T')[0],
-                base_price: 1250000,
-                availability: 5
+                price: 1250000,
+                available: 5
             });
         }
 
