@@ -1,8 +1,9 @@
 import { requireSession } from "@/lib/auth";
 
 async function getBookings(token: string) {
+  const backendUrl = process.env.BOOKING_ENGINE_API_URL ?? "https://booking-engine-vq7e.onrender.com";
   try {
-    const res = await fetch(`${process.env.BACKEND_URL}/bookings/my`, {
+    const res = await fetch(`${backendUrl}/bookings/my`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
