@@ -37,6 +37,7 @@ export async function updateRates(
   if (!session) return { status: "error", message: "You must be signed in." };
 
   const roomTypeId = formData.get("roomTypeId") as string;
+  const ratePlanId = formData.get("ratePlanId") as string;
   const price = Number(formData.get("price"));
   const startDate = formData.get("startDate") as string;
   const endDate = formData.get("endDate") as string;
@@ -55,6 +56,7 @@ export async function updateRates(
         date: d.toISOString().split("T")[0],
         price: price,
         available: 5,
+        rate_plan_id: ratePlanId || null,
       });
     }
 
@@ -80,11 +82,16 @@ export async function updateRates(
   }
 }
 
-export async function getRoomRates(roomTypeId: string, startDate: string, endDate: string) {
+export async function getRoomRates(roomTypeId: string, startDate: string, endDate: string, ratePlanId?: string) {
   const session = await getSession();
   if (!session) return [];
 
-  const response = await fetch(`${API_BASE_URL}/room-types/${roomTypeId}/rates/?start_date=${startDate}&end_date=${endDate}`, {
+  let url = `${API_BASE_URL}/room-types/${roomTypeId}/rates/?start_date=${startDate}&end_date=${endDate}`;
+  if (ratePlanId) {
+    url += `&rate_plan_id=${ratePlanId}`;
+  }
+
+  const response = await fetch(url, {
     headers: { "Authorization": `Bearer ${session.accessToken}` },
   });
 

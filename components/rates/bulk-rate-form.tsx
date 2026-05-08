@@ -6,17 +6,24 @@ import { SubmitButton } from "@/components/auth/submit-button";
 
 const initialState: RateActionState = { status: "idle" };
 
-export function BulkRateForm({ roomTypes }: { roomTypes: any[] }) {
+export function BulkRateForm({ roomTypes, ratePlans }: { roomTypes: any[], ratePlans: any[] }) {
   const [state, formAction] = useActionState(updateRates, initialState);
 
   return (
     <form action={formAction} className="rounded-3xl border border-slate-200 p-6 bg-slate-50/50">
-      <h3 className="text-lg font-semibold text-slate-900 mb-4">Bulk Update Rates (BAR)</h3>
+      <h3 className="text-lg font-semibold text-slate-900 mb-4">Bulk Update Rates</h3>
       <div className="grid gap-4">
         <div className="grid gap-2">
           <label className="text-sm font-medium">Room Type</label>
           <select name="roomTypeId" required className="h-10 rounded-xl border border-slate-200 px-3 text-sm bg-white">
             {roomTypes.map(rt => <option key={rt.id} value={rt.id}>{rt.name}</option>)}
+          </select>
+        </div>
+        <div className="grid gap-2">
+          <label className="text-sm font-medium">Rate Plan</label>
+          <select name="ratePlanId" className="h-10 rounded-xl border border-slate-200 px-3 text-sm bg-white">
+            <option value="">Base BAR (No Plan)</option>
+            {ratePlans.map(rp => <option key={rp.id} value={rp.id}>{rp.name} ({roomTypes.find(rt => rt.id === rp.room_type_id)?.name})</option>)}
           </select>
         </div>
         <div className="grid gap-2">

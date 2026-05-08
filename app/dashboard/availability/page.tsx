@@ -60,10 +60,13 @@ export default async function AvailabilityPage({
 
   const ratePromises = roomTypes.map(async (rt) => {
     const rates = await getRoomTypeRates(rt.id, startDate, endDate, accessToken);
+    console.log(`Fetched ${rates.length} rates for room type ${rt.name} (${rt.id})`);
     return { id: rt.id, rates };
   });
 
   const allRates = await Promise.all(ratePromises);
+  console.log(`Total room types in response: ${roomTypes.length}`);
+  console.log(`Room types: ${JSON.stringify(roomTypes.map(r => r.name))}`);
   roomRates = allRates.reduce((acc, curr) => {
     acc[curr.id] = curr.rates;
     return acc;
