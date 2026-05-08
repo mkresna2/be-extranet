@@ -1,3 +1,4 @@
+import { Calendar, Filter, Search } from "lucide-react";
 import { requireSession } from "@/lib/auth";
 
 export default async function AvailabilityPage() {
@@ -20,11 +21,24 @@ export default async function AvailabilityPage() {
 
       <div className="mt-8 space-y-6">
         <div className="flex items-center justify-between rounded-3xl bg-slate-50 p-4">
-           <div className="flex items-center gap-4">
-              <div className="h-10 w-48 rounded-2xl bg-white border border-slate-200" />
-              <div className="h-10 w-32 rounded-2xl bg-white border border-slate-200" />
-           </div>
-           <div className="h-10 w-24 rounded-2xl bg-[var(--color-accent)]" />
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Calendar className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <div className="flex h-11 w-56 items-center rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-medium text-slate-600 shadow-sm transition-all hover:border-slate-300">
+                May 8 - May 14, 2026
+              </div>
+            </div>
+            <div className="relative">
+              <Filter className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <div className="flex h-11 w-44 items-center rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-medium text-slate-600 shadow-sm transition-all hover:border-slate-300">
+                All Room Types
+              </div>
+            </div>
+          </div>
+          <button className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--color-accent)] px-6 text-sm font-semibold text-white shadow-lg shadow-cyan-900/20 transition-all hover:bg-[var(--color-accent-strong)] active:scale-95">
+            <Search className="h-4 w-4" />
+            Update View
+          </button>
         </div>
 
         <div className="rounded-[28px] border border-slate-200 overflow-hidden">
