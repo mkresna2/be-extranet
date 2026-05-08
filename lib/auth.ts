@@ -354,13 +354,13 @@ export const getSession = cache(async (): Promise<AuthSession | null> => {
       currentProperty: properties[0] ?? null,
     });
   } catch (error) {
-    if (
-      error instanceof BookingEngineAuthError &&
-      [401, 403].includes(error.status)
-    ) {
-      await clearSession();
-      return null;
-    }
+  if (
+    error instanceof BookingEngineAuthError &&
+    [401, 403].includes(error.status)
+  ) {
+    // Cannot clear session (modify cookies) inside getSession/Server Component
+    return null;
+  }
 
     logAuthError("getSession", error);
     throw error;
