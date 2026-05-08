@@ -1,19 +1,25 @@
 import { requireSession } from "@/lib/auth";
 
 async function getBookings(token: string) {
-  const res = await fetch(`${process.env.BACKEND_URL}/api/v1/bookings/my`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    next: { revalidate: 60 },
-  });
+  try {
+    const res = await fetch(`${process.env.BACKEND_URL}/bookings/my`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      next: { revalidate: 60 },
+    });
 
-  if (!res.ok) {
-    if (res.status === 404) return [];
-    throw new Error("Failed to fetch bookings");
+    if (!res.ok) {
+      if (res.status === 404) return [];
+      console.error(`Fetch error: ${res.status} ${res.statusText}`);
+      return [];
+    }
+
+    return res.json();
+  } catch (error) {
+    console.error("Fetch failed:", error);
+    return [];
   }
-
-  return res.json();
 }
 
 export default async function BookingsPage() {
