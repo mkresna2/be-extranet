@@ -1,5 +1,6 @@
-import { Calendar, Filter, Search } from "lucide-react";
+import { Calendar, Filter, RefreshCcw, Search } from "lucide-react";
 import { requireSession } from "@/lib/auth";
+import { syncAvailability } from "@/app/actions/inventory";
 
 export default async function AvailabilityPage() {
   const session = await requireSession();
@@ -7,16 +8,31 @@ export default async function AvailabilityPage() {
 
   return (
     <main className="flex-1 rounded-[32px] border border-white bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-      <div className="space-y-2">
-        <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--color-accent)]">
-          Inventory
-        </p>
-        <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
-          Rate & Availability Calendar
-        </h2>
-        <p className="max-w-2xl text-sm leading-6 text-slate-500">
-          Manage pricing and room availability for {property?.name ?? "your property"}.
-        </p>
+      <div className="flex items-start justify-between">
+        <div className="space-y-2">
+          <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--color-accent)]">
+            Inventory
+          </p>
+          <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
+            Rate & Availability Calendar
+          </h2>
+          <p className="max-w-2xl text-sm leading-6 text-slate-500">
+            Manage pricing and room availability for {property?.name ?? "your property"}.
+          </p>
+        </div>
+
+        <form action={async () => {
+          "use server";
+          await syncAvailability();
+        }}>
+          <button 
+            type="submit"
+            className="inline-flex h-11 items-center gap-2 rounded-2xl bg-white border border-slate-200 px-6 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-95"
+          >
+            <RefreshCcw className="h-4 w-4 text-slate-500" />
+            Update from Channel Manager
+          </button>
+        </form>
       </div>
 
       <div className="mt-8 space-y-6">
