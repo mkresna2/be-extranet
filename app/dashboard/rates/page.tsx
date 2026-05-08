@@ -1,8 +1,8 @@
-import { DollarSign, Calendar, Search } from "lucide-react";
 import { requireSession } from "@/lib/auth";
 import { getRoomTypes } from "@/app/actions/room-types";
 import { getRoomRates } from "@/app/actions/rates";
 import { BulkRateForm } from "@/components/rates/bulk-rate-form";
+import { SyncButton } from "@/components/inventory/sync-button";
 
 export default async function RatesPage() {
   const session = await requireSession();
@@ -39,6 +39,8 @@ export default async function RatesPage() {
           <h2 className="text-3xl font-semibold tracking-tight text-slate-950">Price Management (BAR)</h2>
           <p className="max-w-2xl text-sm leading-6 text-slate-500">Manage Best Available Rates for {session.currentProperty?.name}.</p>
         </div>
+
+        <SyncButton idleLabel="Update Availability" pendingLabel="Updating..." />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
@@ -65,10 +67,15 @@ export default async function RatesPage() {
                     const dateStr = d.toISOString().split('T')[0];
                     const rate = rt.rates.find((r: any) => r.date === dateStr);
                     return (
-                      <div key={i} className="p-4 border-r border-slate-200 last:border-r-0 flex flex-col items-center justify-center">
+                      <div key={i} className="p-4 border-r border-slate-200 last:border-r-0 flex flex-col items-center justify-center gap-1">
                         <div className="text-sm font-semibold text-slate-700">
                           {rate ? `${(rate.price / 1000).toLocaleString()}k` : '-'}
                         </div>
+                        {rate ? (
+                          <div className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                            {rate.available} Left
+                          </div>
+                        ) : null}
                       </div>
                     );
                   })}

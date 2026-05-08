@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/auth";
 
 const API_BASE_URL = process.env.BOOKING_ENGINE_API_URL || "https://booking-engine-vq7e.onrender.com";
@@ -74,9 +75,12 @@ export async function syncAvailability(
         }
     }
 
+    revalidatePath("/dashboard/rates");
+    revalidatePath("/dashboard/availability");
+
     return {
-        status: "success",
-        message: `Successfully updated availability for all ${roomTypes.length} room types from Channel Manager (Mock).`
+      status: "success",
+      message: `Successfully updated availability for all ${roomTypes.length} room types from Channel Manager (Mock).`,
     };
 
   } catch (error: unknown) {

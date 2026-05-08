@@ -9,7 +9,15 @@ const initialInventoryState = {
   status: "idle" as const,
 };
 
-export function SyncButton() {
+type SyncButtonProps = {
+  idleLabel?: string;
+  pendingLabel?: string;
+};
+
+export function SyncButton({
+  idleLabel = "Update from Channel Manager",
+  pendingLabel = "Updating...",
+}: SyncButtonProps) {
   const [state, formAction] = useActionState(
     syncAvailability,
     initialInventoryState,
@@ -23,8 +31,8 @@ export function SyncButton() {
             <RefreshCcw className="h-4 w-4" />
           </span>
           <SubmitButton
-            idleLabel="Update from Channel Manager"
-            pendingLabel="Updating..."
+            idleLabel={idleLabel}
+            pendingLabel={pendingLabel}
           />
         </div>
       </form>
