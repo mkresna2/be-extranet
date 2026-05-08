@@ -19,7 +19,7 @@ async function getBookings(token: string) {
 export default async function BookingsPage() {
   const session = await requireSession();
   const property = session.currentProperty;
-  const bookings = await getBookings(session.token);
+  const bookings = await getBookings(session.accessToken);
 
   return (
     <main className="flex-1 rounded-[32px] border border-white bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
