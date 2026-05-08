@@ -1,5 +1,4 @@
 import { requireSession } from "@/lib/auth";
-import { terminal } from "@/lib/terminal"; // Hypothetical, but we'll use a server action or button
 
 export default async function DevToolsPage() {
   await requireSession();
