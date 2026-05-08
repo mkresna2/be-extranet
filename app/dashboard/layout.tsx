@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, ElementType } from "react";
 import { redirect } from "next/navigation";
 import {
   BarChart3,
@@ -26,6 +26,15 @@ export default async function DashboardLayout({
 
   const propertyTitle = session.currentProperty?.name ?? "No property assigned";
 
+  const navigation = [
+    { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
+    { href: "/dashboard/bookings", label: "Bookings", icon: "ClipboardList" },
+    { href: "/dashboard/availability", label: "Availability", icon: "CalendarRange" },
+    { href: "/dashboard/rates", label: "Rates", icon: "BarChart3" },
+    { href: "/dashboard/alerts", label: "Alerts", icon: "BellDot" },
+    { href: "/dashboard/settings", label: "Settings", icon: "Settings2" },
+  ];
+
   return (
     <div className="min-h-screen bg-[var(--color-canvas)] text-slate-950">
       <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col gap-6 px-4 py-4 lg:flex-row lg:px-6">
@@ -44,12 +53,14 @@ export default async function DashboardLayout({
             </div>
 
             <nav className="space-y-2">
-              <SidebarLink href="/dashboard" label="Dashboard" icon={LayoutDashboard} />
-              <SidebarLink href="/dashboard/bookings" label="Bookings" icon={ClipboardList} />
-              <SidebarLink href="/dashboard/availability" label="Availability" icon={CalendarRange} />
-              <SidebarLink href="/dashboard/rates" label="Rates" icon={BarChart3} />
-              <SidebarLink href="/dashboard/alerts" label="Alerts" icon={BellDot} />
-              <SidebarLink href="/dashboard/settings" label="Settings" icon={Settings2} />
+              {navigation.map((link) => (
+                <SidebarLink
+                  key={link.href}
+                  href={link.href}
+                  label={link.label}
+                  iconName={link.icon}
+                />
+              ))}
             </nav>
           </div>
 

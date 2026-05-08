@@ -1,13 +1,10 @@
 import {
   ArrowUpRight,
-  Building2,
   CalendarClock,
   ChartNoAxesColumn,
-  CircleAlert,
   Coins,
-  Hotel,
-  MapPin,
 } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import { requireSession } from "@/lib/auth";
 
 function formatDateTime(value: string) {
@@ -34,19 +31,19 @@ export default async function DashboardPage() {
       label: "Properties Connected",
       value: String(propertyCount),
       change: propertyCount > 0 ? "Live from booking engine" : "No properties yet",
-      icon: Building2,
+      icon: "Building2",
     },
     {
       label: "Primary Property",
       value: property?.city ?? "Not assigned",
       change: property ? property.country : "Waiting for backend data",
-      icon: MapPin,
+      icon: "MapPin",
     },
     {
       label: "Property Status",
       value: property?.isActive ? "Active" : "Unknown",
       change: property ? `Created ${formatDate(property.createdAt)}` : "No property available",
-      icon: property?.isActive ? Hotel : CircleAlert,
+      icon: property?.isActive ? "Hotel" : "CircleAlert",
     },
   ];
 
@@ -106,28 +103,31 @@ export default async function DashboardPage() {
         </div>
 
         <div className="mt-6 grid gap-4 xl:grid-cols-3">
-          {statCards.map(({ label, value, change, icon: Icon }) => (
-            <article
-              key={label}
-              className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,_#ffffff,_#f8fbfc)] p-5"
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-slate-500">{label}</p>
-                  <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
-                    {value}
-                  </p>
+          {statCards.map(({ label, value, change, icon: iconName }) => {
+            const Icon = (LucideIcons as any)[iconName] || LucideIcons.HelpCircle;
+            return (
+              <article
+                key={label}
+                className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,_#ffffff,_#f8fbfc)] p-5"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500">{label}</p>
+                    <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
+                      {value}
+                    </p>
+                  </div>
+                  <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
+                    <Icon className="h-5 w-5" />
+                  </div>
                 </div>
-                <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
-                  <Icon className="h-5 w-5" />
+                <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-emerald-600">
+                  <ArrowUpRight className="h-4 w-4" />
+                  {change}
                 </div>
-              </div>
-              <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-emerald-600">
-                <ArrowUpRight className="h-4 w-4" />
-                {change}
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
 
         <div className="mt-6 grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">

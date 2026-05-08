@@ -2,21 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { LucideIcon } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 
 type SidebarLinkProps = {
   href: string;
   label: string;
-  icon: LucideIcon;
+  iconName: string;
 };
 
 export function SidebarLink({
   href,
   label,
-  icon: Icon,
+  iconName,
 }: SidebarLinkProps) {
   const pathname = usePathname();
   const isActive = pathname === href;
+
+  // Dynamically get the icon component from Lucide
+  const Icon = (LucideIcons as any)[iconName] || LucideIcons.HelpCircle;
 
   return (
     <Link
