@@ -70,7 +70,7 @@ export default async function AvailabilityPage({
   }, {} as Record<string, RateAvailability[]>);
 
   // Calculate dates between start and end
-  const dates = [];
+  const dates: Date[] = [];
   const start = new Date(startDate);
   const end = new Date(endDate);
   const diffTime = Math.abs(end.getTime() - start.getTime());
