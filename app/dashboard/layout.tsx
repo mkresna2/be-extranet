@@ -33,7 +33,7 @@ export default async function DashboardLayout({
     { href: "/dashboard/rates", label: "Rates", icon: "BarChart3" },
     { href: "/dashboard/alerts", label: "Alerts", icon: "BellDot" },
     { href: "/dashboard/settings", label: "Settings", icon: "Settings2" },
-    { href: "/dashboard/dev", label: "Dev Tools", icon: "Code" },
+    { href: "/dashboard/dev", label: "Dev Tools", icon: "ClipboardList" },
   ];
 
   return (
