@@ -10,6 +10,25 @@ export type InventoryActionState = {
   message?: string;
 };
 
+async function getResponseErrorMessage(response: Response, fallback: string) {
+  const contentType = response.headers.get("content-type")?.toLowerCase() || "";
+
+  if (contentType.includes("json")) {
+    try {
+      const errorData = await response.json();
+      return typeof errorData.detail === "string" ? errorData.detail : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  if (response.status === 500) {
+    return "Internal Server Error";
+  }
+
+  return fallback;
+}
+
 export async function syncAvailability(
   _previousState: InventoryActionState,
   _formData: FormData,
@@ -32,12 +51,16 @@ export async function syncAvailability(
 
   try {
     const roomTypesRes = await fetch(`${API_BASE_URL}/properties/${propertyId}/room-types/`, {
-        headers: {
-            "Authorization": `Bearer ${session.accessToken}`
-        }
+      headers: {
+        "Authorization": `Bearer ${session.accessToken}`,
+      },
     });
 
-    if (!roomTypesRes.ok) throw new Error("Failed to fetch room types");
+    if (!roomTypesRes.ok) {
+      const message = await getResponseErrorMessage(roomTypesRes, "Failed to fetch room types");
+      throw new Error(message);
+    }
+
     const roomTypes = await roomTypesRes.json();
 
     if (roomTypes.length === 0) {
@@ -48,31 +71,32 @@ export async function syncAvailability(
     }
 
     const today = new Date();
-    
+
     for (const roomType of roomTypes) {
-        const rates = [];
-        for (let i = 0; i < 7; i++) {
-            const date = new Date(today);
-            date.setDate(today.getDate() + i);
-            rates.push({
-                date: date.toISOString().split('T')[0],
-                price: 1250000,
-                available: 5
-            });
-        }
-
-        const upsertRes = await fetch(`${API_BASE_URL}/room-types/${roomType.id}/rates/upsert`, {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${session.accessToken}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ rates })
+      const rates = [];
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+        rates.push({
+          date: date.toISOString().split("T")[0],
+          price: 1250000,
+          available: 5,
         });
+      }
 
-        if (!upsertRes.ok) {
-            console.error(`Failed to upsert rates for room type ${roomType.name}`);
-        }
+      const upsertRes = await fetch(`${API_BASE_URL}/room-types/${roomType.id}/rates/upsert`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${session.accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ rates }),
+      });
+
+      if (!upsertRes.ok) {
+        const message = await getResponseErrorMessage(upsertRes, "Failed to upsert rates");
+        console.error(`Failed to upsert rates for room type ${roomType.name}: ${message}`);
+      }
     }
 
     revalidatePath("/dashboard/rates");
@@ -82,7 +106,6 @@ export async function syncAvailability(
       status: "success",
       message: `Successfully updated availability for all ${roomTypes.length} room types from Channel Manager (Mock).`,
     };
-
   } catch (error: unknown) {
     console.error("Sync Error:", error);
     return {

@@ -10,6 +10,25 @@ export type RateActionState = {
   message?: string;
 };
 
+async function getResponseErrorMessage(response: Response, fallback: string) {
+  const contentType = response.headers.get("content-type")?.toLowerCase() || "";
+
+  if (contentType.includes("json")) {
+    try {
+      const errorData = await response.json();
+      return typeof errorData.detail === "string" ? errorData.detail : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  if (response.status === 500) {
+    return "Internal Server Error";
+  }
+
+  return fallback;
+}
+
 export async function updateRates(
   _previousState: RateActionState,
   formData: FormData,
@@ -33,9 +52,9 @@ export async function updateRates(
 
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       rates.push({
-        date: d.toISOString().split('T')[0],
+        date: d.toISOString().split("T")[0],
         price: price,
-        available: 5 // Default for now
+        available: 5,
       });
     }
 
@@ -49,8 +68,8 @@ export async function updateRates(
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || "Failed to update rates.");
+      const message = await getResponseErrorMessage(response, "Failed to update rates.");
+      throw new Error(message);
     }
 
     revalidatePath("/dashboard/rates");
