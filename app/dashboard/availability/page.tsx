@@ -1,6 +1,6 @@
-import { Calendar, Filter, RefreshCcw, Search } from "lucide-react";
+import { Calendar, Filter, Search } from "lucide-react";
 import { requireSession } from "@/lib/auth";
-import { syncAvailability } from "@/app/actions/inventory";
+import { SyncButton } from "@/components/inventory/sync-button";
 
 export default async function AvailabilityPage() {
   const session = await requireSession();
@@ -21,18 +21,7 @@ export default async function AvailabilityPage() {
           </p>
         </div>
 
-        <form action={async () => {
-          "use server";
-          await syncAvailability();
-        }}>
-          <button 
-            type="submit"
-            className="inline-flex h-11 items-center gap-2 rounded-2xl bg-white border border-slate-200 px-6 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 active:scale-95"
-          >
-            <RefreshCcw className="h-4 w-4 text-slate-500" />
-            Update from Channel Manager
-          </button>
-        </form>
+        <SyncButton />
       </div>
 
       <div className="mt-8 space-y-6">

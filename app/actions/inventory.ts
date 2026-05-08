@@ -1,18 +1,32 @@
-"use strict";
+"use server";
 
 import { getSession } from "@/lib/auth";
 
 const API_BASE_URL = process.env.BOOKING_ENGINE_API_URL || "https://booking-engine-vq7e.onrender.com";
 
-export async function syncAvailability() {
+export type InventoryActionState = {
+  status: "idle" | "error" | "success";
+  message?: string;
+};
+
+export async function syncAvailability(
+  _previousState: InventoryActionState,
+  _formData: FormData,
+): Promise<InventoryActionState> {
   const session = await getSession();
   if (!session) {
-    throw new Error("Unauthorized");
+    return {
+      status: "error",
+      message: "You must be signed in to sync availability.",
+    };
   }
 
   const propertyId = session.currentProperty?.id;
   if (!propertyId) {
-    throw new Error("No active property found");
+    return {
+      status: "error",
+      message: "No active property found.",
+    };
   }
 
   // Phase 1: In development, we might just mock the "syncing" or call a refresh.
@@ -30,7 +44,12 @@ export async function syncAvailability() {
     if (!roomTypesRes.ok) throw new Error("Failed to fetch room types");
     const roomTypes = await roomTypesRes.json();
 
-    if (roomTypes.length === 0) return { success: false, message: "No room types found to update." };
+    if (roomTypes.length === 0) {
+      return {
+        status: "error",
+        message: "No room types found to update.",
+      };
+    }
 
     // 2. Mocking an update for the first room type for the next 7 days
     const roomTypeId = roomTypes[0].id;
@@ -58,13 +77,16 @@ export async function syncAvailability() {
 
     if (!upsertRes.ok) throw new Error("Failed to upsert rates");
 
-    return { 
-        success: true, 
-        message: `Successfully updated availability for ${roomTypes[0].name} from Channel Manager (Mock).` 
+    return {
+        status: "success",
+        message: `Successfully updated availability for ${roomTypes[0].name} from Channel Manager (Mock).`
     };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Sync Error:", error);
-    return { success: false, message: error.message || "Failed to sync availability" };
+    return {
+      status: "error",
+      message: error instanceof Error ? error.message : "Failed to sync availability.",
+    };
   }
 }
