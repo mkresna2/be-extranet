@@ -1,10 +1,89 @@
-import { Calendar, Filter, Search } from "lucide-react";
 import { requireSession } from "@/lib/auth";
 import { SyncButton } from "@/components/inventory/sync-button";
+import { AvailabilityFilters } from "@/components/inventory/availability-filters";
+import { getRoomTypes as getRoomTypesAction } from "@/app/actions/room-types";
 
-export default async function AvailabilityPage() {
+const API_BASE_URL =
+  process.env.BOOKING_ENGINE_API_URL ?? "https://booking-engine-vq7e.onrender.com";
+
+interface RateAvailability {
+  date: string;
+  price: number;
+  available_rooms: number;
+  is_available: boolean;
+}
+
+async function getRoomTypeRates(
+  roomTypeId: string,
+  startDate: string,
+  endDate: string,
+  accessToken: string
+): Promise<RateAvailability[]> {
+  const res = await fetch(
+    `${API_BASE_URL}/room-types/${roomTypeId}/rates/?start_date=${startDate}&end_date=${endDate}`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
+    }
+  );
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export default async function AvailabilityPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ start_date?: string; end_date?: string; room_type_id?: string }>;
+}) {
   const session = await requireSession();
-  const property = session.currentProperty;
+  const accessToken = session.accessToken;
+  const params = await searchParams;
+
+  const today = new Date();
+  const defaultStart = today.toISOString().split("T")[0];
+  const defaultEnd = new Date(today.getTime() + 6 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0];
+
+  const startDate = params.start_date || defaultStart;
+  const endDate = params.end_date || defaultEnd;
+  const filterRoomTypeId = params.room_type_id;
+
+  let allRoomTypes = await getRoomTypesAction();
+  let roomTypes = allRoomTypes;
+  let roomRates: Record<string, RateAvailability[]> = {};
+
+  // Apply room type filter if set
+  if (filterRoomTypeId && filterRoomTypeId !== 'all') {
+    roomTypes = allRoomTypes.filter(rt => rt.id === filterRoomTypeId);
+  }
+
+  const ratePromises = roomTypes.map(async (rt) => {
+    const rates = await getRoomTypeRates(rt.id, startDate, endDate, accessToken);
+    return { id: rt.id, rates };
+  });
+
+  const allRates = await Promise.all(ratePromises);
+  roomRates = allRates.reduce((acc, curr) => {
+    acc[curr.id] = curr.rates;
+    return acc;
+  }, {} as Record<string, RateAvailability[]>);
+
+  // Calculate dates between start and end
+  const dates = [];
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diffTime = Math.abs(end.getTime() - start.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  
+  // Limit to a reasonable number of days (e.g., 31) to prevent UI issues
+  const displayDays = Math.min(diffDays, 31);
+
+  for (let i = 0; i < displayDays; i++) {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
+    dates.push(d);
+  }
 
   return (
     <main className="flex-1 rounded-[32px] border border-white bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
@@ -17,7 +96,7 @@ export default async function AvailabilityPage() {
             Rate & Availability Calendar
           </h2>
           <p className="max-w-2xl text-sm leading-6 text-slate-500">
-            Manage pricing and room availability for {property?.name ?? "your property"}.
+            Manage pricing and room availability for {session.currentProperty?.name ?? "your property"}.
           </p>
         </div>
 
@@ -25,51 +104,68 @@ export default async function AvailabilityPage() {
       </div>
 
       <div className="mt-8 space-y-6">
-        <div className="flex items-center justify-between rounded-3xl bg-slate-50 p-4">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <Calendar className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <div className="flex h-11 w-56 items-center rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-medium text-slate-600 shadow-sm transition-all hover:border-slate-300">
-                May 8 - May 14, 2026
-              </div>
+        <AvailabilityFilters 
+          roomTypes={allRoomTypes} 
+          initialStartDate={startDate} 
+          initialEndDate={endDate}
+          initialRoomTypeId={filterRoomTypeId}
+        />
+
+        <div className="rounded-[28px] border border-slate-200 overflow-x-auto">
+          <div className="min-w-[1000px]">
+            <div className={`grid border-b border-slate-200 bg-slate-50`} style={{ gridTemplateColumns: `200px repeat(${dates.length}, 1fr)` }}>
+                <div className="p-4 border-r border-slate-200 font-medium text-xs uppercase tracking-wider text-slate-400">Room Type</div>
+                {dates.map((date, i) => (
+                  <div key={i} className="p-4 text-center border-r border-slate-200 last:border-r-0 font-medium">
+                    <div className="text-xs text-slate-400 uppercase">
+                      {date.toLocaleDateString('en-US', { month: 'short' })}
+                    </div>
+                    <div className="text-lg text-slate-900">{date.getDate()}</div>
+                  </div>
+                ))}
             </div>
-            <div className="relative">
-              <Filter className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <div className="flex h-11 w-44 items-center rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm font-medium text-slate-600 shadow-sm transition-all hover:border-slate-300">
-                All Room Types
-              </div>
+            <div className="divide-y divide-slate-100">
+                {roomTypes.length === 0 ? (
+                  <div className="p-8 text-center text-slate-500 italic">
+                    No room types found for this property or filter.
+                  </div>
+                ) : (
+                  roomTypes.map((roomType) => (
+                    <div key={roomType.id} className="grid" style={{ gridTemplateColumns: `200px repeat(${dates.length}, 1fr)` }}>
+                      <div className="p-4 border-r border-slate-200 bg-slate-50/50">
+                          <div className="font-semibold text-slate-900 text-sm truncate">{roomType.name}</div>
+                          <div className="text-xs text-slate-500 mt-1">Rates (IDR)</div>
+                      </div>
+                      {dates.map((date, i) => {
+                        const dateStr = date.toISOString().split('T')[0];
+                        const rate = roomRates[roomType.id]?.find(r => r.date === dateStr);
+                        
+                        return (
+                          <div key={i} className="p-4 border-r border-slate-200 last:border-r-0 flex flex-col items-center justify-center gap-1 min-w-[80px]">
+                            {rate ? (
+                              <>
+                                <div className="text-sm font-semibold text-[var(--color-accent)]">
+                                  {rate.price >= 1000 ? `${(rate.price / 1000).toFixed(0)}k` : rate.price}
+                                </div>
+                                <div className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                                  rate.available_rooms > 0 
+                                    ? 'bg-emerald-100 text-emerald-700' 
+                                    : 'bg-rose-100 text-rose-700'
+                                }`}>
+                                  {rate.available_rooms} Left
+                                </div>
+                              </>
+                            ) : (
+                              <div className="text-xs text-slate-400 italic">N/A</div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))
+                )}
             </div>
           </div>
-          <button className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[var(--color-accent)] px-6 text-sm font-semibold text-white shadow-lg shadow-cyan-900/20 transition-all hover:bg-[var(--color-accent-strong)] active:scale-95">
-            <Search className="h-4 w-4" />
-            Update View
-          </button>
-        </div>
-
-        <div className="rounded-[28px] border border-slate-200 overflow-hidden">
-           <div className="grid grid-cols-8 bg-slate-50 border-b border-slate-200">
-              <div className="p-4 border-r border-slate-200 font-medium text-xs uppercase tracking-wider text-slate-400">Room Type</div>
-              {[...Array(7)].map((_, i) => (
-                <div key={i} className="p-4 text-center border-r border-slate-200 last:border-r-0 font-medium">
-                   <div className="text-xs text-slate-400 uppercase">May</div>
-                   <div className="text-lg text-slate-900">{8 + i}</div>
-                </div>
-              ))}
-           </div>
-           <div className="divide-y divide-slate-100">
-              <div className="grid grid-cols-8">
-                 <div className="p-4 border-r border-slate-200 bg-slate-50/50">
-                    <div className="font-semibold text-slate-900 text-sm">Deluxe Room</div>
-                    <div className="text-xs text-slate-500 mt-1">Rates (IDR)</div>
-                 </div>
-                 {[...Array(7)].map((_, i) => (
-                    <div key={i} className="p-4 border-r border-slate-200 last:border-r-0 flex flex-col items-center justify-center gap-1">
-                       <div className="text-sm font-semibold text-[var(--color-accent)]">1.250k</div>
-                       <div className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">5 Left</div>
-                    </div>
-                 ))}
-              </div>
-           </div>
         </div>
       </div>
     </main>
