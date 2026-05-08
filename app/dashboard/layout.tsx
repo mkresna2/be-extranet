@@ -29,6 +29,7 @@ export default async function DashboardLayout({
   const navigation = [
     { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
     { href: "/dashboard/bookings", label: "Bookings", icon: "ClipboardList" },
+    { href: "/dashboard/room-types", label: "Room Types", icon: "Hotel" },
     { href: "/dashboard/availability", label: "Availability", icon: "CalendarRange" },
     { href: "/dashboard/rates", label: "Rates", icon: "BarChart3" },
     { href: "/dashboard/alerts", label: "Alerts", icon: "BellDot" },
