@@ -1,8 +1,25 @@
 import { requireSession } from "@/lib/auth";
 
+async function getBookings(token: string) {
+  const res = await fetch(`${process.env.BACKEND_URL}/api/v1/bookings/my`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    next: { revalidate: 60 },
+  });
+
+  if (!res.ok) {
+    if (res.status === 404) return [];
+    throw new Error("Failed to fetch bookings");
+  }
+
+  return res.json();
+}
+
 export default async function BookingsPage() {
   const session = await requireSession();
   const property = session.currentProperty;
+  const bookings = await getBookings(session.token);
 
   return (
     <main className="flex-1 rounded-[32px] border border-white bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
@@ -29,11 +46,37 @@ export default async function BookingsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-             <tr className="bg-white">
+            {bookings.length > 0 ? (
+              bookings.map((booking: any) => (
+                <tr key={booking.id} className="bg-white hover:bg-slate-50">
+                  <td className="px-6 py-4">
+                    <p className="font-semibold text-slate-900">{booking.guest_name}</p>
+                    <p className="text-xs text-slate-500">{booking.booking_ref}</p>
+                  </td>
+                  <td className="px-6 py-4 text-slate-600">
+                    {booking.check_in} - {booking.check_out}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`rounded-full px-2 py-1 text-xs font-medium uppercase tracking-wider ${
+                      booking.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' :
+                      booking.status === 'pending_payment' ? 'bg-amber-100 text-amber-700' :
+                      'bg-slate-100 text-slate-700'
+                    }`}>
+                      {booking.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right font-medium text-slate-900">
+                    ${booking.total_price.toFixed(2)}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr className="bg-white">
                 <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
-                   Fetching live bookings from the engine...
+                  No bookings found for this property.
                 </td>
-             </tr>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
