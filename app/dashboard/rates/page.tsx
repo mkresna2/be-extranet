@@ -24,7 +24,7 @@ export default async function RatesPage() {
     })
   );
 
-  const dates = [];
+  const dates: Date[] = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
