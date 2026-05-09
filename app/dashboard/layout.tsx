@@ -8,6 +8,7 @@ import {
   Hotel,
   LayoutDashboard,
   Settings2,
+  ShieldCheck,
 } from "lucide-react";
 import { LogoutButton } from "@/components/dashboard/logout-button";
 import { SidebarLink } from "@/components/dashboard/sidebar-link";
@@ -38,6 +39,10 @@ export default async function DashboardLayout({
     { href: "/dashboard/settings", label: "Settings", icon: "Settings2" },
     { href: "/dashboard/dev", label: "Dev Tools", icon: "ClipboardList" },
   ];
+
+  if (session.user.isSuperAdmin) {
+    navigation.push({ href: "/admin", label: "Super Admin", icon: "ShieldCheck" });
+  }
 
   return (
     <div className="min-h-screen bg-[var(--color-canvas)] text-slate-950">

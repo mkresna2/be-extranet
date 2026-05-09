@@ -28,6 +28,7 @@ export type AuthUser = {
   email: string;
   fullName: string;
   isActive: boolean;
+  isSuperAdmin: boolean;
   createdAt: string;
 };
 
@@ -131,6 +132,7 @@ function normalizeUser(value: unknown): AuthUser {
     email: asNonEmptyString(value.email),
     fullName: asNonEmptyString(value.full_name),
     isActive: asBoolean(value.is_active),
+    isSuperAdmin: asBoolean(value.is_super_admin),
     createdAt: asNonEmptyString(value.created_at),
   };
 }
