@@ -15,6 +15,7 @@ export function PropertyForm({ property }: { property: AuthProperty }) {
 
   return (
     <form action={formAction} className="space-y-8">
+      <input type="hidden" name="id" value={property.id} />
       <div className="grid gap-6 md:grid-cols-2">
         <label className="space-y-2">
           <span className="text-sm font-medium text-slate-700">Property Name</span>
