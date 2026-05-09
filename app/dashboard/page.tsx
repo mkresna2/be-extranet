@@ -28,6 +28,12 @@ export default async function DashboardPage() {
 
   const statCards = [
     {
+      label: "Active Subscription",
+      value: property?.subscription_id ? "Active" : "Free",
+      change: "View billing",
+      icon: "CreditCard",
+    },
+    {
       label: "Properties Managed",
       value: String(propertyCount),
       change: propertyCount > 1 ? `${propertyCount} hotels available` : "Owner",
@@ -80,13 +86,13 @@ export default async function DashboardPage() {
 
   return (
     <main className="flex-1">
-      <section className="rounded-[32px] border border-white bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
+      <section className="rounded-[32px] border border-white bg-white p-4 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:p-6">
         <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
             <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--color-accent)]">
               Dashboard
             </p>
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
               Welcome, {session.user.fullName}
             </h2>
             <p className="max-w-2xl text-sm leading-6 text-slate-500">
@@ -96,13 +102,13 @@ export default async function DashboardPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          <div className="inline-flex w-fit items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
             <CalendarClock className="h-4 w-4 text-[var(--color-accent)]" />
             Session loaded from API
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 xl:grid-cols-3">
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {statCards.map(({ label, value, change, icon: iconName }) => {
             const Icon = (LucideIcons as any)[iconName] || LucideIcons.HelpCircle;
             return (
@@ -111,13 +117,13 @@ export default async function DashboardPage() {
                 className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,_#ffffff,_#f8fbfc)] p-5"
               >
                 <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-slate-500">{label}</p>
-                    <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm text-slate-500">{label}</p>
+                    <p className="mt-3 truncate text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
                       {value}
                     </p>
                   </div>
-                  <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
+                  <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
                     <Icon className="h-5 w-5" />
                   </div>
                 </div>
@@ -131,8 +137,8 @@ export default async function DashboardPage() {
         </div>
 
         <div className="mt-6 grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-          <section className="rounded-[28px] border border-slate-200 p-5">
-            <div className="flex items-center justify-between">
+          <section className="rounded-[28px] border border-slate-200 p-4 sm:p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-slate-950">
                   Property snapshot
@@ -141,41 +147,47 @@ export default async function DashboardPage() {
                   Live property details for the authenticated account.
                 </p>
               </div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-slate-500">
+              <div className="inline-flex w-fit items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-slate-500">
                 <ChartNoAxesColumn className="h-4 w-4" />
                 {property ? "Live data" : "Fallback"}
               </div>
             </div>
 
-            <div className="mt-5 overflow-hidden rounded-3xl border border-slate-200">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-slate-500">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Field</th>
-                    <th className="px-4 py-3 font-medium">Value</th>
-                    <th className="px-4 py-3 font-medium">State</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {infoRows.map((row) => (
-                    <tr key={row.title} className="border-t border-slate-100">
-                      <td className="px-4 py-4 font-medium text-slate-800">
-                        {row.title}
-                      </td>
-                      <td className="px-4 py-4 text-slate-500">{row.detail}</td>
-                      <td className="px-4 py-4">
-                        <span className="rounded-full bg-[var(--color-accent)]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
-                          {row.status}
-                        </span>
-                      </td>
+            <div className="mt-5 overflow-x-auto rounded-3xl border border-slate-200">
+              <div className="min-w-[600px] lg:min-w-full">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Field</th>
+                      <th className="px-4 py-3 font-medium">Value</th>
+                      <th className="px-4 py-3 font-medium">State</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {infoRows.map((row) => (
+                      <tr key={row.title} className="border-t border-slate-100">
+                        <td className="px-4 py-4 font-medium text-slate-800">
+                          {row.title}
+                        </td>
+                        <td className="px-4 py-4 text-slate-500">{row.detail}</td>
+                        <td className="px-4 py-4">
+                          <span className="rounded-full bg-[var(--color-accent)]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                            {row.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
+            <p className="mt-3 text-xs text-slate-400 lg:hidden">
+              Swipe horizontally to see more details.
+            </p>
           </section>
 
-          <section className="rounded-[28px] border border-slate-200 p-5">
+          <section className="rounded-[28px] border border-slate-200 p-4 sm:p-5">
+
             <h3 className="text-lg font-semibold text-slate-950">
               Integration notes
             </h3>

@@ -1,19 +1,7 @@
-import type { ReactNode, ElementType } from "react";
+import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import {
-  BarChart3,
-  BellDot,
-  CalendarRange,
-  ClipboardList,
-  Hotel,
-  LayoutDashboard,
-  Settings2,
-  ShieldCheck,
-} from "lucide-react";
-import { LogoutButton } from "@/components/dashboard/logout-button";
-import { SidebarLink } from "@/components/dashboard/sidebar-link";
-import { PropertySwitcher } from "@/components/dashboard/property-switcher";
 import { getSession } from "@/lib/auth";
+import DashboardLayoutClient from "./layout-client";
 
 export default async function DashboardLayout({
   children,
@@ -26,71 +14,9 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  const navigation = [
-    { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
-    { href: "/dashboard/bookings", label: "Bookings", icon: "ClipboardList" },
-    { href: "/dashboard/room-types", label: "Room Types", icon: "Hotel" },
-    { href: "/dashboard/rate-plans", label: "Rate Plans", icon: "CalendarRange" },
-    { href: "/dashboard/availability", label: "Availability", icon: "CalendarRange" },
-    { href: "/dashboard/rates", label: "Rates", icon: "BarChart3" },
-    { href: "/dashboard/guests", label: "Guests", icon: "ClipboardList" },
-    { href: "/dashboard/webhooks", label: "Webhooks", icon: "Settings2" },
-    { href: "/dashboard/alerts", label: "Alerts", icon: "BellDot" },
-    { href: "/dashboard/settings", label: "Settings", icon: "Settings2" },
-    { href: "/dashboard/dev", label: "Dev Tools", icon: "ClipboardList" },
-  ];
-
-  if (session.user.isSuperAdmin) {
-    navigation.push({ href: "/admin", label: "Super Admin", icon: "ShieldCheck" });
-  }
-
   return (
-    <div className="min-h-screen bg-[var(--color-canvas)] text-slate-950">
-      <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col gap-6 px-4 py-4 lg:flex-row lg:px-6">
-        <aside className="flex w-full flex-col justify-between rounded-[32px] bg-[linear-gradient(180deg,_#0b4c5e,_#0a3441)] p-6 text-white shadow-[0_24px_80px_rgba(11,76,94,0.25)] lg:w-80">
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
-                <Hotel className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-cyan-50/65">
-                  BE Extranet
-                </p>
-                <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-2 transition-colors hover:bg-white/10">
-                  <PropertySwitcher
-                    properties={session.properties}
-                    currentProperty={session.currentProperty}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <nav className="space-y-2">
-              {navigation.map((link) => (
-                <SidebarLink
-                  key={link.href}
-                  href={link.href}
-                  label={link.label}
-                  iconName={link.icon}
-                />
-              ))}
-            </nav>
-          </div>
-
-          <div className="rounded-3xl border border-white/10 bg-white/8 p-4">
-            <p className="text-sm font-semibold">{session.user.fullName}</p>
-            <p className="mt-1 text-sm text-cyan-50/70">{session.user.email}</p>
-            <div className="mt-4">
-              <LogoutButton />
-            </div>
-          </div>
-        </aside>
-
-        <div className="flex flex-1 flex-col">
-          {children}
-        </div>
-      </div>
-    </div>
+    <DashboardLayoutClient session={session}>
+      {children}
+    </DashboardLayoutClient>
   );
 }
