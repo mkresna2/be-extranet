@@ -133,7 +133,7 @@ function normalizeUser(value: unknown): AuthUser {
     email: asNonEmptyString(value.email),
     fullName: asNonEmptyString(value.full_name),
     isActive: asBoolean(value.is_active),
-    isSuperAdmin: asBoolean(value.is_super_admin),
+    isSuperAdmin: asBoolean(value.is_super_admin ?? false),
     createdAt: asNonEmptyString(value.created_at),
   });
 }
