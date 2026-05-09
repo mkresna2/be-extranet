@@ -1,20 +1,30 @@
 import { Users } from "lucide-react";
 import { getSession } from "@/lib/auth";
 
+const API_BASE_URL =
+  process.env.BOOKING_ENGINE_API_URL || "https://booking-engine-vq7e.onrender.com";
+
 async function getGuests() {
   const session = await getSession();
   if (!session) return [];
   
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/guests/`, {
-    headers: { Authorization: `Bearer ${session.accessToken}` },
-  });
-  
-  if (!response.ok) return [];
-  return response.json();
+  try {
+    const response = await fetch(`${API_BASE_URL}/guests/`, {
+      headers: { Authorization: `Bearer ${session.accessToken}` },
+    });
+    
+    if (!response.ok) return [];
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("Failed to fetch guests:", error);
+    return [];
+  }
 }
 
 export default async function GuestsPage() {
-  const guests = await getGuests();
+  const rawGuests = await getGuests();
+  const guests = Array.isArray(rawGuests) ? rawGuests : [];
 
   return (
     <main className="flex-1 space-y-6">
