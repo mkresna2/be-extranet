@@ -74,7 +74,7 @@ export default function DashboardLayoutClient({
         </button>
       </header>
 
-      <div className="mx-auto flex min-h-[calc(100vh-64px)] max-w-[1600px] flex-col gap-6 p-4 lg:min-h-screen lg:flex-row lg:px-6 lg:py-4">
+      <div className="mx-auto flex min-h-[calc(100vh-64px)] max-w-[1600px] flex-col gap-6 p-4 lg:min-h-screen lg:flex-row lg:p-6">
         {/* Sidebar Backdrop */}
         {isSidebarOpen && (
           <div

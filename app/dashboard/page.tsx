@@ -94,8 +94,8 @@ export default async function DashboardPage() {
 
   return (
     <main className="flex-1">
-      <section className="rounded-[32px] border border-white bg-white p-4 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:p-6">
-        <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 lg:flex-row lg:items-center lg:justify-between">
+      <section className="rounded-[24px] border border-white bg-white p-4 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">
+        <div className="flex flex-col gap-6 border-b border-slate-100 pb-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
             <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--color-accent)]">
               Dashboard
@@ -116,7 +116,7 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {statCards.map(({ label, value, change, icon: iconName }) => {
             const Icon = (LucideIcons as any)[iconName] || LucideIcons.HelpCircle;
             return (
@@ -177,7 +177,7 @@ export default async function DashboardPage() {
                         <td className="px-4 py-4 font-medium text-slate-800">
                           {row.title}
                         </td>
-                        <td className="px-4 py-4 text-slate-500">{row.detail}</td>
+                        <td className="break-all px-4 py-4 text-slate-500">{row.detail}</td>
                         <td className="px-4 py-4">
                           <span className="rounded-full bg-[var(--color-accent)]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
                             {row.status}
@@ -225,7 +225,7 @@ export default async function DashboardPage() {
                 Current property
               </h3>
             </div>
-            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <article className="rounded-3xl bg-slate-50 p-4">
                 <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
                   Name
