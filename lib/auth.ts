@@ -353,12 +353,13 @@ export const getSession = cache(async (): Promise<AuthSession | null> => {
     const currentProperty =
       properties.find((p) => p.id === propertyId) ?? properties[0] ?? null;
 
-    return serializePlain({
+    // Ensure we return a clean, serializable object for Next.js Server-to-Client handoff
+    return {
       accessToken,
-      user,
-      properties,
-      currentProperty,
-    });
+      user: serializePlain(user),
+      properties: properties.map(p => serializePlain(p)),
+      currentProperty: currentProperty ? serializePlain(currentProperty) : null,
+    };
   } catch (error) {
   if (
     error instanceof BookingEngineAuthError &&
