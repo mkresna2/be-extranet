@@ -47,7 +47,7 @@ export async function createRatePlan(data: {
   if (!session?.currentProperty) throw new Error("No property selected");
 
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/properties/${session.currentProperty.id}/rate-plans/`,
+    `${API_BASE_URL}/properties/${session.currentProperty.id}/rate-plans/`,
     {
       method: "POST",
       headers: {
