@@ -146,4 +146,6 @@ export default async function SettingsPage({
           )}
         </div>
       </section>
-    </main>\n  );\n}\n
+    </main>
+  );
+}
