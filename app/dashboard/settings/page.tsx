@@ -3,6 +3,8 @@ import { requireSession } from "@/lib/auth";
 import { SettingsTabs } from "@/components/settings/settings-tabs";
 import { PropertyForm } from "@/components/settings/property-form";
 
+import { CreatePropertyDialog } from "@/components/settings/create-property-dialog";
+
 export default async function SettingsPage({
   searchParams,
 }: {
@@ -14,17 +16,20 @@ export default async function SettingsPage({
   return (
     <main className="flex-1 space-y-6">
       <section className="rounded-[32px] border border-white bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-        <div className="space-y-2 border-b border-slate-100 pb-6">
-          <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--color-accent)]">
-            Account & Property
-          </p>
-          <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
-            Settings
-          </h2>
-          <p className="max-w-2xl text-sm leading-6 text-slate-500">
-            Manage your property configuration, team roles, and external API
-            connections.
-          </p>
+        <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--color-accent)]">
+              Account & Property
+            </p>
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
+              Settings
+            </h2>
+            <p className="max-w-2xl text-sm leading-6 text-slate-500">
+              Manage your property configuration, team roles, and external API
+              connections.
+            </p>
+          </div>
+          {tab === "property" && <CreatePropertyDialog />}
         </div>
 
         <div className="mt-6 space-y-8">
