@@ -161,23 +161,54 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            <div className="mt-5 overflow-x-auto rounded-3xl border border-slate-200">
-              <div className="min-w-[600px] lg:min-w-full">
+            {/* Card layout for mobile */}
+            <div className="mt-5 space-y-4 md:hidden">
+              {infoRows.map((row) => (
+                <article
+                  key={row.title}
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      {row.title}
+                    </p>
+                    <span className="shrink-0 rounded-full bg-[var(--color-accent)]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]">
+                      {row.status}
+                    </span>
+                  </div>
+                  <p className="mt-2 break-words text-sm leading-relaxed text-slate-700">
+                    {row.detail}
+                  </p>
+                </article>
+              ))}
+            </div>
+
+            {/* Table layout for desktop */}
+            <div className="mt-5 hidden overflow-x-auto rounded-3xl border border-slate-200 md:block">
+              <div className="min-w-full">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 text-slate-500">
                     <tr>
-                      <th className="px-4 py-3 font-medium">Field</th>
-                      <th className="px-4 py-3 font-medium">Value</th>
-                      <th className="px-4 py-3 font-medium">State</th>
+                      <th className="px-4 py-3 font-medium text-slate-900">
+                        Field
+                      </th>
+                      <th className="px-4 py-3 font-medium text-slate-900">
+                        Value
+                      </th>
+                      <th className="px-4 py-3 font-medium text-slate-900">
+                        State
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {infoRows.map((row) => (
                       <tr key={row.title} className="border-t border-slate-100">
-                        <td className="px-4 py-4 font-medium text-slate-800">
+                        <td className="whitespace-nowrap px-4 py-4 font-medium text-slate-800">
                           {row.title}
                         </td>
-                        <td className="break-all px-4 py-4 text-slate-500">{row.detail}</td>
+                        <td className="break-words px-4 py-4 text-slate-500">
+                          {row.detail}
+                        </td>
                         <td className="px-4 py-4">
                           <span className="rounded-full bg-[var(--color-accent)]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-accent)]">
                             {row.status}
@@ -189,8 +220,8 @@ export default async function DashboardPage() {
                 </table>
               </div>
             </div>
-            <p className="mt-3 text-xs text-slate-400 lg:hidden">
-              Swipe horizontally to see more details.
+            <p className="mt-3 hidden text-xs text-slate-400 lg:block">
+              Property data synced with core engine.
             </p>
           </section>
 
