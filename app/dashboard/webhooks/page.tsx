@@ -1,20 +1,30 @@
 import { Webhook } from "lucide-react";
 import { getSession } from "@/lib/auth";
 
+const API_BASE_URL =
+  process.env.BOOKING_ENGINE_API_URL || "https://booking-engine-vq7e.onrender.com";
+
 async function getWebhooks() {
   const session = await getSession();
   if (!session) return [];
   
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/webhooks/`, {
-    headers: { Authorization: `Bearer ${session.accessToken}` },
-  });
-  
-  if (!response.ok) return [];
-  return response.json();
+  try {
+    const response = await fetch(`${API_BASE_URL}/webhooks/`, {
+      headers: { Authorization: `Bearer ${session.accessToken}` },
+    });
+    
+    if (!response.ok) return [];
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("Failed to fetch webhooks:", error);
+    return [];
+  }
 }
 
 export default async function WebhooksPage() {
-  const webhooks = await getWebhooks();
+  const rawWebhooks = await getWebhooks();
+  const webhooks = Array.isArray(rawWebhooks) ? rawWebhooks : [];
 
   return (
     <main className="flex-1 space-y-6">
