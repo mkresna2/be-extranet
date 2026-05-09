@@ -41,6 +41,7 @@ export type AuthProperty = {
   country: string;
   isActive: boolean;
   createdAt: string;
+  subscription_id: string | null;
 };
 
 export type AuthSession = {
@@ -154,6 +155,7 @@ function normalizeProperty(value: unknown): AuthProperty {
     country: asNonEmptyString(value.country),
     isActive: asBoolean(value.is_active),
     createdAt: asNonEmptyString(value.created_at),
+    subscription_id: asNullableString(value.subscription_id),
   };
 }
 
