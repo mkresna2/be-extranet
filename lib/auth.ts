@@ -9,6 +9,7 @@ const API_BASE_URL =
 
 const ACCESS_TOKEN_COOKIE = "be-extranet-access-token";
 const REFRESH_TOKEN_COOKIE = "be-extranet-refresh-token";
+const PROPERTY_ID_COOKIE = "be-extranet-property-id";
 const SESSION_MAX_AGE = 60 * 60 * 8;
 
 type TokenResponse = {
@@ -347,11 +348,15 @@ export const getSession = cache(async (): Promise<AuthSession | null> => {
   try {
     const { user, properties } = await fetchSessionData(accessToken);
 
+    const propertyId = cookieStore.get(PROPERTY_ID_COOKIE)?.value;
+    const currentProperty =
+      properties.find((p) => p.id === propertyId) ?? properties[0] ?? null;
+
     return serializePlain({
       accessToken,
       user,
       properties,
-      currentProperty: properties[0] ?? null,
+      currentProperty,
     });
   } catch (error) {
   if (

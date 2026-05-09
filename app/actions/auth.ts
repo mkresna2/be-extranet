@@ -1,5 +1,7 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   BookingEngineAuthError,
@@ -7,6 +9,9 @@ import {
   createSession,
   loginWithBackend,
 } from "@/lib/auth";
+
+const PROPERTY_ID_COOKIE = "be-extranet-property-id";
+const SESSION_MAX_AGE = 60 * 60 * 8;
 
 /* Action states defined outside to avoid Next.js 'use server' value export error */
 export type AuthActionState = {
@@ -17,6 +22,18 @@ export type AuthActionState = {
     status?: number;
   };
 };
+
+export async function setActiveProperty(id: string) {
+  const cookieStore = await cookies();
+  cookieStore.set(PROPERTY_ID_COOKIE, id, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: SESSION_MAX_AGE,
+  });
+  revalidatePath("/");
+}
 
 export async function loginAction(
   _previousState: AuthActionState,

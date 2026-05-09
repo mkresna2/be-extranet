@@ -28,20 +28,20 @@ export default async function DashboardPage() {
 
   const statCards = [
     {
-      label: "Properties Connected",
+      label: "Properties Managed",
       value: String(propertyCount),
-      change: propertyCount > 0 ? "Live from booking engine" : "No properties yet",
+      change: propertyCount > 1 ? `${propertyCount} hotels available` : "Owner",
       icon: "Building2",
     },
     {
-      label: "Primary Property",
-      value: property?.city ?? "Not assigned",
-      change: property ? property.country : "Waiting for backend data",
+      label: "Selected Property",
+      value: property?.name ?? "Not assigned",
+      change: property ? `${property.city}, ${property.country}` : "Waiting for selection",
       icon: "MapPin",
     },
     {
       label: "Property Status",
-      value: property?.isActive ? "Active" : "Unknown",
+      value: property?.isActive ? "Active" : "Inactive",
       change: property ? `Created ${formatDate(property.createdAt)}` : "No property available",
       icon: property?.isActive ? "Hotel" : "CircleAlert",
     },

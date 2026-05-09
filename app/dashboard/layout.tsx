@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { LogoutButton } from "@/components/dashboard/logout-button";
 import { SidebarLink } from "@/components/dashboard/sidebar-link";
+import { PropertySwitcher } from "@/components/dashboard/property-switcher";
 import { getSession } from "@/lib/auth";
 
 export default async function DashboardLayout({
@@ -23,8 +24,6 @@ export default async function DashboardLayout({
   if (!session) {
     redirect("/login");
   }
-
-  const propertyTitle = session.currentProperty?.name ?? "No property assigned";
 
   const navigation = [
     { href: "/dashboard", label: "Dashboard", icon: "LayoutDashboard" },
@@ -53,7 +52,12 @@ export default async function DashboardLayout({
                 <p className="text-xs uppercase tracking-[0.24em] text-cyan-50/65">
                   BE Extranet
                 </p>
-                <h1 className="mt-2 text-xl font-semibold">{propertyTitle}</h1>
+                <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-2 transition-colors hover:bg-white/10">
+                  <PropertySwitcher
+                    properties={session.properties}
+                    currentProperty={session.currentProperty}
+                  />
+                </div>
               </div>
             </div>
 
