@@ -48,8 +48,12 @@ export default function DashboardLayoutClient({
     { href: "/dashboard/dev", label: "Dev Tools", icon: "ClipboardList" },
   ];
 
-  if (session.user.isSuperAdmin) {
+  if (session?.user?.isSuperAdmin) {
     navigation.push({ href: "/admin", label: "Super Admin", icon: "ShieldCheck" });
+  }
+
+  if (!session?.user) {
+    return <>{children}</>;
   }
 
   return (
@@ -116,8 +120,8 @@ export default function DashboardLayoutClient({
           </div>
 
           <div className="mt-auto rounded-3xl border border-white/10 bg-white/5 p-4">
-            <p className="truncate text-sm font-semibold">{session.user.fullName}</p>
-            <p className="mt-1 truncate text-xs text-cyan-50/70">{session.user.email}</p>
+            <p className="truncate text-sm font-semibold">{session.user?.fullName ?? "User"}</p>
+            <p className="mt-1 truncate text-xs text-cyan-50/70">{session.user?.email ?? ""}</p>
             <div className="mt-4">
               <LogoutButton />
             </div>

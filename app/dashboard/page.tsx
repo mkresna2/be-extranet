@@ -8,23 +8,31 @@ import * as LucideIcons from "lucide-react";
 import { requireSession } from "@/lib/auth";
 
 function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("en-ID", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Makassar",
-  }).format(new Date(value));
+  try {
+    return new Intl.DateTimeFormat("en-ID", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: "Asia/Makassar",
+    }).format(new Date(value));
+  } catch (e) {
+    return value;
+  }
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-ID", {
-    dateStyle: "medium",
-  }).format(new Date(value));
+  try {
+    return new Intl.DateTimeFormat("en-ID", {
+      dateStyle: "medium",
+    }).format(new Date(value));
+  } catch (e) {
+    return value;
+  }
 }
 
 export default async function DashboardPage() {
   const session = await requireSession();
   const property = session.currentProperty;
-  const propertyCount = session.properties.length;
+  const propertyCount = session.properties?.length ?? 0;
 
   const statCards = [
     {
@@ -93,7 +101,7 @@ export default async function DashboardPage() {
               Dashboard
             </p>
             <h2 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
-              Welcome, {session.user.fullName}
+              Welcome, {session.user?.fullName ?? "User"}
             </h2>
             <p className="max-w-2xl text-sm leading-6 text-slate-500">
               This workspace now loads the authenticated user and owned properties from

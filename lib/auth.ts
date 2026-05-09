@@ -128,14 +128,14 @@ function normalizeUser(value: unknown): AuthUser {
     );
   }
 
-  return {
+  return serializePlain({
     id: asNonEmptyString(value.id),
     email: asNonEmptyString(value.email),
     fullName: asNonEmptyString(value.full_name),
     isActive: asBoolean(value.is_active),
     isSuperAdmin: asBoolean(value.is_super_admin),
     createdAt: asNonEmptyString(value.created_at),
-  };
+  });
 }
 
 function normalizeProperty(value: unknown): AuthProperty {
@@ -146,7 +146,7 @@ function normalizeProperty(value: unknown): AuthProperty {
     );
   }
 
-  return {
+  return serializePlain({
     id: asNonEmptyString(value.id),
     name: asNonEmptyString(value.name),
     description: asNullableString(value.description),
@@ -156,7 +156,7 @@ function normalizeProperty(value: unknown): AuthProperty {
     isActive: asBoolean(value.is_active),
     createdAt: asNonEmptyString(value.created_at),
     subscription_id: asNullableString(value.subscription_id),
-  };
+  });
 }
 
 function normalizeTokenResponse(value: unknown): TokenResponse {
@@ -187,13 +187,10 @@ function normalizeTokenResponse(value: unknown): TokenResponse {
 
 function normalizeProperties(value: unknown): AuthProperty[] {
   if (!Array.isArray(value)) {
-    throw new BookingEngineAuthError(
-      "Invalid properties payload received from the booking-engine API.",
-      502,
-    );
+    return [];
   }
 
-  return serializePlain(value.map(normalizeProperty));
+  return value.map(normalizeProperty);
 }
 
 export async function loginWithBackend(email: string, password: string) {
