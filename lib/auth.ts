@@ -354,12 +354,20 @@ export const getSession = cache(async (): Promise<AuthSession | null> => {
       properties.find((p) => p.id === propertyId) ?? properties[0] ?? null;
 
     // Ensure we return a clean, serializable object for Next.js Server-to-Client handoff
-    return {
+    const cleanSession = {
       accessToken,
       user: serializePlain(user),
-      properties: properties.map(p => serializePlain(p)),
+      properties: properties.map((p) => serializePlain(p)),
       currentProperty: currentProperty ? serializePlain(currentProperty) : null,
     };
+
+    console.log("[auth] getSession success:", {
+      userId: cleanSession.user.id,
+      propertyId: cleanSession.currentProperty?.id,
+      propertyCount: cleanSession.properties.length,
+    });
+
+    return cleanSession;
   } catch (error) {
   if (
     error instanceof BookingEngineAuthError &&
