@@ -7,14 +7,18 @@ import { requireSession } from "@/lib/auth";
 export default async function RatePlansPage() {
   const session = await requireSession();
   const property = session.currentProperty;
-  const roomTypes = await getRoomTypes();
-  const ratePlans = await getRatePlans();
+  const roomTypes = (await getRoomTypes()) || [];
+  const ratePlans = (await getRatePlans()) || [];
 
   // Group rate plans by room type for display
-  const plansByRoomType = roomTypes.map((rt: any) => ({
-    ...rt,
-    plans: ratePlans.filter((p: any) => p.room_type_id === rt.id),
-  }));
+  const plansByRoomType = Array.isArray(roomTypes) 
+    ? roomTypes.map((rt: any) => ({
+        ...rt,
+        plans: Array.isArray(ratePlans) 
+          ? ratePlans.filter((p: any) => p.room_type_id === rt.id)
+          : [],
+      }))
+    : [];
 
   return (
     <main className="flex-1 space-y-6">
