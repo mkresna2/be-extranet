@@ -48,8 +48,15 @@ export default async function AvailabilityPage({
   const startDate = params.start_date || defaultStart;
   const endDate = params.end_date || defaultEnd;
   const filterRoomTypeId = params.room_type_id;
+  const normalizedStartDate = new Date(`${startDate}T00:00:00`);
+  const normalizedEndDate = new Date(`${endDate}T00:00:00`);
+  const diffTime = Math.abs(normalizedEndDate.getTime() - normalizedStartDate.getTime());
+  const windowDays = Math.max(
+    Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1,
+    1,
+  );
 
-  let allRoomTypes = await getRoomTypesAction();
+  const allRoomTypes = await getRoomTypesAction();
   let roomTypes = allRoomTypes;
   let roomRates: Record<string, RateAvailability[]> = {};
 
@@ -74,10 +81,8 @@ export default async function AvailabilityPage({
 
   // Calculate dates between start and end
   const dates: Date[] = [];
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const diffTime = Math.abs(end.getTime() - start.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  const start = new Date(`${startDate}T00:00:00`);
+  const diffDays = windowDays;
   
   // Limit to a reasonable number of days (e.g., 31) to prevent UI issues
   const displayDays = Math.min(diffDays, 31);
@@ -116,6 +121,8 @@ export default async function AvailabilityPage({
           initialStartDate={startDate} 
           initialEndDate={endDate}
           initialRoomTypeId={filterRoomTypeId}
+          windowDays={windowDays}
+          todayDate={defaultStart}
         />
 
         <div className="rounded-[28px] border border-slate-200 overflow-x-auto relative">
