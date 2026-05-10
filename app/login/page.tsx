@@ -9,12 +9,19 @@ export const metadata: Metadata = {
   title: "Login | BE Extranet",
 };
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reset?: string }>;
+}) {
   const session = await getSessionForPublicRoute();
 
   if (session) {
     redirect("/dashboard");
   }
+
+  const params = await searchParams;
+  const showResetSuccess = params.reset === "success";
 
   return (
     <main className="relative flex min-h-screen overflow-hidden bg-[var(--color-canvas)]">
@@ -57,17 +64,23 @@ export default async function LoginPage() {
             </p>
           </div>
 
+          {showResetSuccess ? (
+            <div className="mb-6 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+              Password updated successfully. Please sign in with your new
+              password.
+            </div>
+          ) : null}
+
           <LoginForm />
 
-          <div className="mt-8 rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-500">
-            Password recovery is still placeholder-only. Visit{" "}
+          <div className="mt-8 text-sm leading-6 text-slate-500">
+            Forgot your password?{" "}
             <Link
               href="/forgot-password"
               className="font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-strong)]"
             >
-              forgot password
-            </Link>{" "}
-            to preview that flow.
+              Reset it here
+            </Link>
           </div>
         </div>
       </section>
