@@ -1,8 +1,8 @@
 import { BarChart3, CalendarRange, Layers3 } from "lucide-react";
 import { requireSession } from "@/lib/auth";
-import { getRoomTypes } from "@/app/actions/room-types";
+import { getRoomTypes, type RoomType } from "@/app/actions/room-types";
 import { getRoomRates } from "@/app/actions/rates";
-import { getRatePlans } from "@/app/actions/rate-plans";
+import { getRatePlans, type RatePlan } from "@/app/actions/rate-plans";
 import { BulkRateForm } from "@/components/rates/bulk-rate-form";
 import { RateWindowControls } from "@/components/rates/rate-window-controls";
 import { SyncButton } from "@/components/inventory/sync-button";
@@ -14,6 +14,22 @@ type RatesPageSearchParams = Promise<{
   start_date?: string;
   range?: string;
 }>;
+
+type RateEntry = {
+  date: string;
+  price: number;
+  available: number;
+  rate_plan_id?: string | null;
+};
+
+type PlanRow = {
+  plan: RatePlan | null;
+  rates: RateEntry[];
+};
+
+type RoomTypeWithPlans = RoomType & {
+  plansWithRates: PlanRow[];
+};
 
 function formatCurrency(price?: number) {
   if (typeof price !== "number") return "Not set";
@@ -61,6 +77,43 @@ function addDays(date: Date, days: number) {
   return nextDate;
 }
 
+function getDerivedPrice(basePrice: number | undefined, plan: RatePlan | null) {
+  if (typeof basePrice !== "number" || !plan || plan.pricing_strategy !== "derived_from_bar") {
+    return undefined;
+  }
+
+  const adjustmentValue = plan.adjustment_value;
+  if (typeof adjustmentValue !== "number") {
+    return basePrice;
+  }
+
+  if (plan.adjustment_type === "percentage") {
+    return Math.max(basePrice * (1 - adjustmentValue / 100), 0);
+  }
+
+  if (plan.adjustment_type === "fixed_amount") {
+    return Math.max(basePrice - adjustmentValue, 0);
+  }
+
+  return basePrice;
+}
+
+function getDerivedRuleLabel(plan: RatePlan | null) {
+  if (!plan || plan.pricing_strategy !== "derived_from_bar") {
+    return null;
+  }
+
+  if (plan.adjustment_type === "percentage") {
+    return `BAR - ${plan.adjustment_value ?? 0}%`;
+  }
+
+  if (plan.adjustment_type === "fixed_amount") {
+    return `BAR - ${formatCurrency(plan.adjustment_value ?? 0)}`;
+  }
+
+  return "Derived from BAR";
+}
+
 function parseDateParam(value?: string) {
   if (!value) return null;
   const parsed = new Date(value);
@@ -86,8 +139,8 @@ export default async function RatesPage({
 }) {
   const session = await requireSession();
   const { start_date: startDateParam, range: rangeParam } = await searchParams;
-  const roomTypes = await getRoomTypes();
-  const ratePlans = await getRatePlans();
+  const roomTypes: RoomType[] = await getRoomTypes();
+  const ratePlans: RatePlan[] = await getRatePlans();
 
   const today = new Date();
   const normalizedToday = new Date(
@@ -103,15 +156,15 @@ export default async function RatesPage({
   const endDateStr = formatIsoDate(endDate);
   const activeWindowLabel = `${formatFullDate(startDate)} — ${formatFullDate(endDate)}`;
 
-  const roomTypesWithPlans = await Promise.all(
-    roomTypes.map(async (roomType: any) => {
+  const roomTypesWithPlans: RoomTypeWithPlans[] = await Promise.all(
+    roomTypes.map(async (roomType) => {
       const matchingPlans = ratePlans.filter(
-        (plan: any) => plan.room_type_id === roomType.id,
+        (plan) => plan.room_type_id === roomType.id,
       );
-      const allPlans = [null, ...matchingPlans];
+      const allPlans: Array<RatePlan | null> = [null, ...matchingPlans];
 
-      const plansWithRates = await Promise.all(
-        allPlans.map(async (plan: any) => {
+      const plansWithRates: PlanRow[] = await Promise.all(
+        allPlans.map(async (plan) => {
           const rates = await getRoomRates(
             roomType.id,
             startDateStr,
@@ -119,7 +172,7 @@ export default async function RatesPage({
             plan?.id,
           );
 
-          return { plan, rates: Array.isArray(rates) ? rates : [] };
+          return { plan, rates: Array.isArray(rates) ? (rates as RateEntry[]) : [] };
         }),
       );
 
@@ -141,7 +194,7 @@ export default async function RatesPage({
     (sum, roomType) =>
       sum +
       roomType.plansWithRates.reduce(
-        (planSum: number, plan: any) => planSum + plan.rates.length,
+        (planSum, plan) => planSum + plan.rates.length,
         0,
       ),
     0,
@@ -279,7 +332,7 @@ export default async function RatesPage({
                     </div>
 
                     <div className="mt-4 space-y-3">
-                      {roomType.plansWithRates.map((planRow: any) => (
+                      {roomType.plansWithRates.map((planRow) => (
                         <article
                           key={planRow.plan?.id || `base-${roomType.id}`}
                           className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3"
@@ -294,6 +347,11 @@ export default async function RatesPage({
                                   "Default direct pricing with no additional rate-plan rules."}
                               </p>
                             </div>
+                            {planRow.plan?.pricing_strategy === "derived_from_bar" ? (
+                              <div className="inline-flex w-fit rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-700 ring-1 ring-amber-200">
+                                Preview from {getDerivedRuleLabel(planRow.plan)}
+                              </div>
+                            ) : null}
                           </div>
 
                           <div className="-mx-3 mt-3 overflow-x-auto px-3 pb-1">
@@ -301,8 +359,22 @@ export default async function RatesPage({
                               {dates.map((date, index) => {
                                 const dateStr = formatIsoDate(date);
                                 const rate = planRow.rates.find(
-                                  (entry: any) => entry.date === dateStr,
+                                  (entry) => entry.date === dateStr,
                                 );
+                                const basePlanRow = roomType.plansWithRates.find(
+                                  (candidate) => candidate.plan === null,
+                                );
+                                const baseRate = basePlanRow?.rates.find(
+                                  (entry) => entry.date === dateStr,
+                                );
+                                const derivedPreviewPrice = getDerivedPrice(
+                                  baseRate?.price,
+                                  planRow.plan,
+                                );
+                                const displayPrice =
+                                  typeof derivedPreviewPrice === "number"
+                                    ? derivedPreviewPrice
+                                    : rate?.price;
 
                                 return (
                                   <div
@@ -331,12 +403,19 @@ export default async function RatesPage({
 
                                     <div className="mt-3">
                                       <p className="text-lg font-semibold text-slate-950">
-                                        {formatCurrency(rate?.price)}
+                                        {formatCurrency(displayPrice)}
                                       </p>
+                                      {typeof derivedPreviewPrice === "number" ? (
+                                        <p className="mt-1 text-[11px] font-medium text-amber-700">
+                                          Estimated from Base BAR {formatCurrency(baseRate?.price)}
+                                        </p>
+                                      ) : null}
                                       <p className="mt-1 text-xs text-slate-500">
-                                        {rate
-                                          ? "Availability synced for this date."
-                                          : "No price has been configured for this date yet."}
+                                        {typeof derivedPreviewPrice === "number"
+                                          ? "Preview follows the BAR rule for this rate plan."
+                                          : rate
+                                            ? "Availability synced for this date."
+                                            : "No price has been configured for this date yet."}
                                       </p>
                                     </div>
                                   </div>
@@ -387,7 +466,7 @@ export default async function RatesPage({
                     <div className="divide-y divide-slate-100">
                       {roomTypesWithPlans.map((roomType) => (
                         <div key={roomType.id} className="divide-y divide-slate-100">
-                          {roomType.plansWithRates.map((planRow: any, index: number) => (
+                          {roomType.plansWithRates.map((planRow, index) => (
                             <div
                               key={planRow.plan?.id || `base-${roomType.id}`}
                               className="grid"
@@ -408,13 +487,32 @@ export default async function RatesPage({
                                   {planRow.plan?.description ||
                                     "Default direct pricing for the property website and direct bookings."}
                                 </p>
+                                {planRow.plan?.pricing_strategy === "derived_from_bar" ? (
+                                  <div className="mt-2 inline-flex w-fit rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-700 ring-1 ring-amber-200">
+                                    Preview from {getDerivedRuleLabel(planRow.plan)}
+                                  </div>
+                                ) : null}
                               </div>
 
                               {dates.map((date, cellIndex) => {
                                 const dateStr = formatIsoDate(date);
                                 const rate = planRow.rates.find(
-                                  (entry: any) => entry.date === dateStr,
+                                  (entry) => entry.date === dateStr,
                                 );
+                                const basePlanRow = roomType.plansWithRates.find(
+                                  (candidate) => candidate.plan === null,
+                                );
+                                const baseRate = basePlanRow?.rates.find(
+                                  (entry) => entry.date === dateStr,
+                                );
+                                const derivedPreviewPrice = getDerivedPrice(
+                                  baseRate?.price,
+                                  planRow.plan,
+                                );
+                                const displayPrice =
+                                  typeof derivedPreviewPrice === "number"
+                                    ? derivedPreviewPrice
+                                    : rate?.price;
 
                                 return (
                                   <div
@@ -422,16 +520,25 @@ export default async function RatesPage({
                                     className="flex flex-col items-center justify-center gap-2 border-r border-slate-200 p-4 text-center last:border-r-0"
                                   >
                                     <div className="text-sm font-semibold text-slate-900">
-                                      {formatCompactAmount(rate?.price)}
+                                      {formatCompactAmount(displayPrice)}
                                     </div>
+                                    {typeof derivedPreviewPrice === "number" ? (
+                                      <div className="text-[10px] font-medium text-amber-700">
+                                        Est. from {formatCompactAmount(baseRate?.price)}
+                                      </div>
+                                    ) : null}
                                     <span
                                       className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
-                                        rate
+                                        typeof derivedPreviewPrice === "number" || rate
                                           ? "bg-emerald-100 text-emerald-700"
                                           : "bg-slate-100 text-slate-500"
                                       }`}
                                     >
-                                      {rate ? `${rate.available} left` : "No rate"}
+                                      {typeof derivedPreviewPrice === "number"
+                                        ? `BAR preview${rate ? ` · ${rate.available} left` : ""}`
+                                        : rate
+                                          ? `${rate.available} left`
+                                          : "No rate"}
                                     </span>
                                   </div>
                                 );
