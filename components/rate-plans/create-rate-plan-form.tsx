@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Loader2 } from "lucide-react";
-import { createRatePlan } from "@/app/actions/rate-plans";
+import { createRatePlan, type RatePlanPayload } from "@/app/actions/rate-plans";
 
 interface RoomType {
   id: string;
@@ -21,12 +21,13 @@ export function CreateRatePlanForm({ roomTypes }: { roomTypes: RoomType[] }) {
     setError(null);
 
     const formData = new FormData(event.currentTarget);
-    const data = {
+    const data: RatePlanPayload = {
       room_type_id: formData.get("room_type_id") as string,
       name: formData.get("name") as string,
       description: formData.get("description") as string,
       cancellation_policy: formData.get("cancellation_policy") as string,
       meal_plan: formData.get("meal_plan") as string,
+      pricing_strategy: "manual",
     };
 
     try {
