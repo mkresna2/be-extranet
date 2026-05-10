@@ -17,13 +17,26 @@ type AdjustmentType = "percentage" | "fixed_amount";
 type RatePlanEditorProps = {
   roomTypes: RoomTypeOption[];
   initialPlan?: RatePlan | null;
+  selectedRoomTypeIds?: string[];
+  existingPlanIdsByRoomType?: Record<string, string>;
   triggerLabel?: string;
   triggerVariant?: "primary" | "secondary" | "ghost";
 };
 
-function buildInitialValues(plan?: RatePlan | null) {
+function buildInitialValues(
+  plan?: RatePlan | null,
+  selectedRoomTypeIds: string[] = [],
+  existingPlanIdsByRoomType: Record<string, string> = {},
+) {
   return {
-    room_type_id: plan?.room_type_id ?? "",
+    room_type_ids:
+      selectedRoomTypeIds.length > 0
+        ? selectedRoomTypeIds
+        : plan?.room_type_id
+          ? [plan.room_type_id]
+          : [],
+    original_name: plan?.name ?? "",
+    existing_plan_ids_by_room_type: existingPlanIdsByRoomType,
     name: plan?.name ?? "",
     description: plan?.description ?? "",
     cancellation_policy: plan?.cancellation_policy ?? "",
@@ -51,7 +64,9 @@ function formatAdjustmentPreview(mode: PricingMode, type: AdjustmentType, rawVal
 function sanitizePayload(values: ReturnType<typeof buildInitialValues>): RatePlanPayload {
   const pricingStrategy = values.pricing_strategy;
   const payload: RatePlanPayload = {
-    room_type_id: values.room_type_id,
+    room_type_ids: values.room_type_ids,
+    original_name: values.original_name,
+    existing_plan_ids_by_room_type: values.existing_plan_ids_by_room_type,
     name: values.name,
     description: values.description,
     cancellation_policy: values.cancellation_policy,
@@ -70,6 +85,8 @@ function sanitizePayload(values: ReturnType<typeof buildInitialValues>): RatePla
 export function RatePlanEditor({
   roomTypes,
   initialPlan = null,
+  selectedRoomTypeIds = [],
+  existingPlanIdsByRoomType = {},
   triggerLabel,
   triggerVariant = "primary",
 }: RatePlanEditorProps) {
@@ -77,7 +94,9 @@ export function RatePlanEditor({
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [values, setValues] = useState(() => buildInitialValues(initialPlan));
+  const [values, setValues] = useState(() =>
+    buildInitialValues(initialPlan, selectedRoomTypeIds, existingPlanIdsByRoomType),
+  );
 
   const isEditing = Boolean(initialPlan);
   const selectedPricingStrategy = values.pricing_strategy;
@@ -99,7 +118,9 @@ export function RatePlanEditor({
   }, [triggerVariant]);
 
   function openEditor() {
-    setValues(buildInitialValues(initialPlan));
+    setValues(
+      buildInitialValues(initialPlan, selectedRoomTypeIds, existingPlanIdsByRoomType),
+    );
     setError(null);
     setIsOpen(true);
   }
@@ -115,6 +136,19 @@ export function RatePlanEditor({
     value: ReturnType<typeof buildInitialValues>[K],
   ) {
     setValues((current) => ({ ...current, [key]: value }));
+  }
+
+  function toggleRoomTypeSelection(roomTypeId: string) {
+    setValues((current) => {
+      const nextSelection = current.room_type_ids.includes(roomTypeId)
+        ? current.room_type_ids.filter((value) => value !== roomTypeId)
+        : [...current.room_type_ids, roomTypeId];
+
+      return {
+        ...current,
+        room_type_ids: nextSelection,
+      };
+    });
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -173,24 +207,45 @@ export function RatePlanEditor({
                 <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-8 sm:py-6">
                   <div className="space-y-5">
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <label className="space-y-2 sm:col-span-2">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                          Room Type
-                        </span>
-                        <select
-                          required
-                          value={values.room_type_id}
-                          onChange={(event) => updateField("room_type_id", event.target.value)}
-                          className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm outline-none transition focus:border-[var(--color-accent)] focus:ring-4 focus:ring-[var(--color-accent)]/10"
-                        >
-                          <option value="">Select room type</option>
-                          {roomTypes.map((roomType) => (
-                            <option key={roomType.id} value={roomType.id}>
-                              {roomType.name}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
+                      <div className="space-y-3 sm:col-span-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                            Room Types
+                          </span>
+                          <span className="text-xs text-slate-400">
+                            {values.room_type_ids.length} selected
+                          </span>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {roomTypes.map((roomType) => {
+                            const checked = values.room_type_ids.includes(roomType.id);
+
+                            return (
+                              <label
+                                key={roomType.id}
+                                className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 text-sm transition ${
+                                  checked
+                                    ? "border-[var(--color-accent)] bg-[var(--color-accent)]/5"
+                                    : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => toggleRoomTypeSelection(roomType.id)}
+                                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[var(--color-accent)] focus:ring-[var(--color-accent)]"
+                                />
+                                <span className="min-w-0 font-medium text-slate-700">
+                                  {roomType.name}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                        <p className="text-xs leading-5 text-slate-500">
+                          Pilih satu atau lebih tipe kamar. Sistem akan membuat / sinkronkan rate plan yang sama ke semua room type terpilih.
+                        </p>
+                      </div>
 
                       <label className="space-y-2">
                         <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">

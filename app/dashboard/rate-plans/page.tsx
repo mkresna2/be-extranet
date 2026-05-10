@@ -1,4 +1,4 @@
-import { CalendarRange, Hotel, Info, PencilLine, Sparkles, Tag } from "lucide-react";
+import { CalendarRange, Info, PencilLine, Sparkles, Tag } from "lucide-react";
 
 import { getRatePlans, type RatePlan } from "@/app/actions/rate-plans";
 import { getRoomTypes, type RoomType } from "@/app/actions/room-types";
@@ -37,10 +37,62 @@ export default async function RatePlansPage() {
   }));
   const ratePlans: RatePlan[] = (await getRatePlans()) || [];
 
-  const plansByRoomType = roomTypes.map((rt) => ({
-    ...rt,
-    plans: ratePlans.filter((p) => p.room_type_id === rt.id),
-  }));
+  const groupedPlansMap = new Map<
+    string,
+    {
+      key: string;
+      planIdsByRoomType: Record<string, string>;
+      name: string;
+      description: string | null;
+      cancellation_policy: string | null;
+      meal_plan: string | null;
+      pricing_strategy: RatePlan["pricing_strategy"];
+      adjustment_type: RatePlan["adjustment_type"];
+      adjustment_value: RatePlan["adjustment_value"];
+      roomTypeIds: string[];
+      roomTypeNames: string[];
+      representativePlan: RatePlan;
+    }
+  >();
+
+  for (const plan of ratePlans) {
+    const groupingKey = [
+      plan.name,
+      plan.description ?? "",
+      plan.cancellation_policy ?? "",
+      plan.meal_plan ?? "",
+      plan.pricing_strategy,
+      plan.adjustment_type ?? "",
+      String(plan.adjustment_value ?? ""),
+    ].join("::");
+
+    const roomTypeName = roomTypes.find((roomType) => roomType.id === plan.room_type_id)?.name ?? "Unknown room type";
+
+    const existingGroup = groupedPlansMap.get(groupingKey);
+    if (existingGroup) {
+      existingGroup.roomTypeIds.push(plan.room_type_id);
+      existingGroup.roomTypeNames.push(roomTypeName);
+      existingGroup.planIdsByRoomType[plan.room_type_id] = plan.id;
+      continue;
+    }
+
+    groupedPlansMap.set(groupingKey, {
+      key: groupingKey,
+      planIdsByRoomType: { [plan.room_type_id]: plan.id },
+      name: plan.name,
+      description: plan.description,
+      cancellation_policy: plan.cancellation_policy,
+      meal_plan: plan.meal_plan,
+      pricing_strategy: plan.pricing_strategy,
+      adjustment_type: plan.adjustment_type,
+      adjustment_value: plan.adjustment_value,
+      roomTypeIds: [plan.room_type_id],
+      roomTypeNames: [roomTypeName],
+      representativePlan: plan,
+    });
+  }
+
+  const groupedPlans = Array.from(groupedPlansMap.values());
 
   const derivedPlansCount = ratePlans.filter(
     (plan) => plan.pricing_strategy === "derived_from_bar",
@@ -111,23 +163,14 @@ export default async function RatePlansPage() {
             </div>
 
             <div className="mt-6 space-y-8">
-              {plansByRoomType.map((rt) => (
-                <div key={rt.id} className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Hotel className="h-4 w-4 text-slate-400" />
-                    <h4 className="truncate font-semibold text-slate-900">{rt.name}</h4>
-                    <span className="whitespace-nowrap text-xs text-slate-400">
-                      — {rt.plans.length} plans
-                    </span>
-                  </div>
-
-                  {rt.plans.length > 0 ? (
+              {groupedPlans.length > 0 ? (
                     <>
                       <div className="hidden overflow-hidden rounded-3xl border border-slate-200 md:block">
                         <table className="w-full text-left text-sm">
                           <thead className="bg-slate-50 text-slate-500">
                             <tr>
                               <th className="px-4 py-3 font-medium">Rate Plan</th>
+                              <th className="px-4 py-3 font-medium">Room Types</th>
                               <th className="px-4 py-3 font-medium">Policy</th>
                               <th className="px-4 py-3 font-medium">Pricing Rule</th>
                               <th className="px-4 py-3 font-medium">Meal</th>
@@ -135,32 +178,46 @@ export default async function RatePlansPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {rt.plans.map((plan) => (
-                              <tr key={plan.id} className="border-t border-slate-100 align-top">
+                            {groupedPlans.map((planGroup) => (
+                              <tr key={planGroup.key} className="border-t border-slate-100 align-top">
                                 <td className="px-4 py-4">
-                                  <p className="font-semibold text-slate-900">{plan.name}</p>
+                                  <p className="font-semibold text-slate-900">{planGroup.name}</p>
                                   <p className="mt-1 text-xs text-slate-500">
-                                    {plan.description || "No description provided."}
+                                    {planGroup.description || "No description provided."}
                                   </p>
                                 </td>
                                 <td className="px-4 py-4 text-slate-600">
-                                  {plan.cancellation_policy || "Standard"}
+                                  <div className="flex flex-wrap gap-2">
+                                    {planGroup.roomTypeNames.map((roomTypeName) => (
+                                      <span
+                                        key={`${planGroup.key}-${roomTypeName}`}
+                                        className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600"
+                                      >
+                                        {roomTypeName}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4 text-slate-600">
+                                  {planGroup.cancellation_policy || "Standard"}
                                 </td>
                                 <td className="px-4 py-4">
                                   <div className="space-y-1">
                                     <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">
-                                      {formatPricingMode(plan)}
+                                      {formatPricingMode(planGroup.representativePlan)}
                                     </span>
-                                    <p className="text-sm text-slate-600">{formatAdjustment(plan)}</p>
+                                    <p className="text-sm text-slate-600">{formatAdjustment(planGroup.representativePlan)}</p>
                                   </div>
                                 </td>
                                 <td className="px-4 py-4 text-slate-600">
-                                  {plan.meal_plan || "None"}
+                                  {planGroup.meal_plan || "None"}
                                 </td>
                                 <td className="px-4 py-4 text-right">
                                   <RatePlanEditor
                                     roomTypes={roomTypeOptions}
-                                    initialPlan={plan}
+                                    initialPlan={planGroup.representativePlan}
+                                    selectedRoomTypeIds={planGroup.roomTypeIds}
+                                    existingPlanIdsByRoomType={planGroup.planIdsByRoomType}
                                     triggerLabel="Edit"
                                     triggerVariant="ghost"
                                   />
@@ -172,34 +229,51 @@ export default async function RatePlansPage() {
                       </div>
 
                       <div className="space-y-3 md:hidden">
-                        {rt.plans.map((plan) => (
+                        {groupedPlans.map((planGroup) => (
                           <div
-                            key={plan.id}
+                            key={planGroup.key}
                             className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
                           >
                             <div className="mb-3 flex items-start justify-between gap-3 border-b border-slate-50 pb-3">
                               <div className="min-w-0">
-                                <p className="font-bold text-slate-900">{plan.name}</p>
-                                {plan.description ? (
+                                <p className="font-bold text-slate-900">{planGroup.name}</p>
+                                {planGroup.description ? (
                                   <p className="mt-1 text-xs text-slate-500 line-clamp-3">
-                                    {plan.description}
+                                    {planGroup.description}
                                   </p>
                                 ) : null}
                               </div>
                               <RatePlanEditor
                                 roomTypes={roomTypeOptions}
-                                initialPlan={plan}
+                                initialPlan={planGroup.representativePlan}
+                                selectedRoomTypeIds={planGroup.roomTypeIds}
+                                existingPlanIdsByRoomType={planGroup.planIdsByRoomType}
                                 triggerLabel="Edit"
                                 triggerVariant="ghost"
                               />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
+                              <div className="col-span-2">
+                                <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                                  Room Types
+                                </p>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {planGroup.roomTypeNames.map((roomTypeName) => (
+                                    <span
+                                      key={`${planGroup.key}-mobile-${roomTypeName}`}
+                                      className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600"
+                                    >
+                                      {roomTypeName}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
                               <div>
                                 <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
                                   Policy
                                 </p>
                                 <p className="text-xs text-slate-600">
-                                  {plan.cancellation_policy || "Standard"}
+                                  {planGroup.cancellation_policy || "Standard"}
                                 </p>
                               </div>
                               <div>
@@ -207,15 +281,15 @@ export default async function RatePlansPage() {
                                   Meal Plan
                                 </p>
                                 <p className="text-right text-xs text-slate-600">
-                                  {plan.meal_plan || "None"}
+                                  {planGroup.meal_plan || "None"}
                                 </p>
                               </div>
                               <div className="col-span-2 rounded-2xl bg-slate-50 p-3">
                                 <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
                                   <Tag className="h-3.5 w-3.5" />
-                                  {formatPricingMode(plan)}
+                                  {formatPricingMode(planGroup.representativePlan)}
                                 </div>
-                                <p className="mt-2 text-sm text-slate-600">{formatAdjustment(plan)}</p>
+                                <p className="mt-2 text-sm text-slate-600">{formatAdjustment(planGroup.representativePlan)}</p>
                               </div>
                             </div>
                           </div>
@@ -223,12 +297,10 @@ export default async function RatePlansPage() {
                       </div>
                     </>
                   ) : (
-                    <div className="rounded-2xl border border-dashed border-slate-200 p-4 text-center">
-                      <p className="text-xs text-slate-400">No rate plans for this room type yet.</p>
-                    </div>
-                  )}
+                <div className="rounded-2xl border border-dashed border-slate-200 p-4 text-center">
+                  <p className="text-xs text-slate-400">No rate plans yet.</p>
                 </div>
-              ))}
+              )}
             </div>
           </section>
 

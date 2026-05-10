@@ -20,7 +20,10 @@ export type RatePlan = {
 };
 
 export type RatePlanPayload = {
-  room_type_id: string;
+  room_type_id?: string;
+  room_type_ids?: string[];
+  original_name?: string;
+  existing_plan_ids_by_room_type?: Record<string, string>;
   name: string;
   description?: string;
   cancellation_policy?: string;
@@ -112,7 +115,24 @@ async function readApiErrorMessage(response: Response, fallback: string) {
   return response.status === 500 ? "Internal Server Error" : fallback;
 }
 
-function sanitizeRatePlanPayload(data: RatePlanPayload) {
+function getTargetRoomTypeIds(data: RatePlanPayload) {
+  const rawIds =
+    Array.isArray(data.room_type_ids) && data.room_type_ids.length > 0
+      ? data.room_type_ids
+      : data.room_type_id
+        ? [data.room_type_id]
+        : [];
+
+  const roomTypeIds = Array.from(new Set(rawIds.map((value) => value.trim()).filter(Boolean)));
+
+  if (roomTypeIds.length === 0) {
+    throw new Error("Select at least one room type");
+  }
+
+  return roomTypeIds;
+}
+
+function sanitizeRatePlanPayload(data: RatePlanPayload, roomTypeId: string) {
   const pricingStrategy = data.pricing_strategy || "manual";
   const adjustmentType =
     pricingStrategy === "derived_from_bar" && data.adjustment_type
@@ -124,7 +144,7 @@ function sanitizeRatePlanPayload(data: RatePlanPayload) {
       : undefined;
 
   return {
-    room_type_id: data.room_type_id,
+    room_type_id: roomTypeId,
     name: data.name.trim(),
     description: data.description?.trim() || undefined,
     cancellation_policy: data.cancellation_policy?.trim() || undefined,
@@ -133,6 +153,74 @@ function sanitizeRatePlanPayload(data: RatePlanPayload) {
     adjustment_type: adjustmentType || undefined,
     adjustment_value: adjustmentValue,
   };
+}
+
+async function createRatePlanRequest(
+  propertyId: string,
+  accessToken: string,
+  data: RatePlanPayload,
+  roomTypeId: string,
+) {
+  const response = await fetch(`${API_BASE_URL}/properties/${propertyId}/rate-plans/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(sanitizeRatePlanPayload(data, roomTypeId)),
+  });
+
+  if (!response.ok) {
+    throw new Error(await readApiErrorMessage(response, "Failed to create rate plan"));
+  }
+
+  return normalizeRatePlan(await response.json());
+}
+
+async function updateRatePlanRequest(
+  propertyId: string,
+  accessToken: string,
+  ratePlanId: string,
+  data: RatePlanPayload,
+  roomTypeId: string,
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/properties/${propertyId}/rate-plans/${ratePlanId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(sanitizeRatePlanPayload(data, roomTypeId)),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(await readApiErrorMessage(response, "Failed to update rate plan"));
+  }
+
+  return normalizeRatePlan(await response.json());
+}
+
+async function deleteRatePlanRequest(
+  propertyId: string,
+  accessToken: string,
+  ratePlanId: string,
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/properties/${propertyId}/rate-plans/${ratePlanId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(await readApiErrorMessage(response, "Failed to delete rate plan"));
+  }
 }
 
 export async function getRatePlans(roomTypeId?: string): Promise<RatePlan[]> {
@@ -165,47 +253,61 @@ export async function getRatePlans(roomTypeId?: string): Promise<RatePlan[]> {
 
 export async function createRatePlan(data: RatePlanPayload) {
   const { propertyId, accessToken } = await getCurrentPropertyContext();
+  const roomTypeIds = getTargetRoomTypeIds(data);
 
-  const response = await fetch(`${API_BASE_URL}/properties/${propertyId}/rate-plans/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify(sanitizeRatePlanPayload(data)),
-  });
-
-  if (!response.ok) {
-    throw new Error(await readApiErrorMessage(response, "Failed to create rate plan"));
+  const createdPlans: RatePlan[] = [];
+  for (const roomTypeId of roomTypeIds) {
+    createdPlans.push(
+      await createRatePlanRequest(propertyId, accessToken, data, roomTypeId),
+    );
   }
 
   revalidatePath("/dashboard/rate-plans");
   revalidatePath("/dashboard/rates");
   revalidatePath("/dashboard/availability");
-  return normalizeRatePlan(await response.json());
+  return createdPlans;
 }
 
 export async function updateRatePlan(ratePlanId: string, data: RatePlanPayload) {
   const { propertyId, accessToken } = await getCurrentPropertyContext();
+  const roomTypeIds = getTargetRoomTypeIds(data);
+  const existingPlanIdsByRoomType = data.existing_plan_ids_by_room_type ?? {};
 
-  const response = await fetch(
-    `${API_BASE_URL}/properties/${propertyId}/rate-plans/${ratePlanId}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(sanitizeRatePlanPayload(data)),
-    },
-  );
+  const updatedPlans: RatePlan[] = [];
+  const handledPlanIds = new Set<string>();
 
-  if (!response.ok) {
-    throw new Error(await readApiErrorMessage(response, "Failed to update rate plan"));
+  for (const roomTypeId of roomTypeIds) {
+    const existingPlanId = existingPlanIdsByRoomType[roomTypeId] ?? (roomTypeId === data.room_type_id ? ratePlanId : undefined);
+
+    if (existingPlanId) {
+      handledPlanIds.add(existingPlanId);
+      updatedPlans.push(
+        await updateRatePlanRequest(
+          propertyId,
+          accessToken,
+          existingPlanId,
+          data,
+          roomTypeId,
+        ),
+      );
+      continue;
+    }
+
+    updatedPlans.push(
+      await createRatePlanRequest(propertyId, accessToken, data, roomTypeId),
+    );
+  }
+
+  for (const [roomTypeId, existingPlanId] of Object.entries(existingPlanIdsByRoomType)) {
+    if (roomTypeIds.includes(roomTypeId) || handledPlanIds.has(existingPlanId)) {
+      continue;
+    }
+
+    await deleteRatePlanRequest(propertyId, accessToken, existingPlanId);
   }
 
   revalidatePath("/dashboard/rate-plans");
   revalidatePath("/dashboard/rates");
   revalidatePath("/dashboard/availability");
-  return normalizeRatePlan(await response.json());
+  return updatedPlans;
 }
