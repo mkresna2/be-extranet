@@ -8,21 +8,26 @@ import { setActiveProperty } from "@/app/actions/auth";
 type PropertySwitcherProps = {
   properties: AuthProperty[];
   currentProperty: AuthProperty | null;
+  collapsed?: boolean;
 };
 
 export function PropertySwitcher({
   properties,
   currentProperty,
+  collapsed = false,
 }: PropertySwitcherProps) {
   const [isPending, startTransition] = useTransition();
 
   if (properties.length <= 1) {
     return (
-      <div className="flex items-center gap-3 px-1 py-2">
+      <div
+        className={`flex items-center px-1 py-2 ${collapsed ? "justify-center" : "gap-3"}`}
+        title={collapsed ? currentProperty?.name ?? "No property" : undefined}
+      >
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
           <Hotel className="h-5 w-5 text-white" />
         </div>
-        <div className="min-w-0 flex-1">
+        <div className={`min-w-0 flex-1 ${collapsed ? "hidden" : ""}`}>
           <p className="truncate text-sm font-semibold text-white">
             {currentProperty?.name ?? "No property"}
           </p>
@@ -42,12 +47,15 @@ export function PropertySwitcher({
   };
 
   return (
-    <div className="relative group">
-      <div className="flex items-center gap-3 px-1 py-2">
+    <div className="group relative">
+      <div
+        className={`flex items-center px-1 py-2 ${collapsed ? "justify-center" : "gap-3"}`}
+        title={collapsed ? currentProperty?.name : undefined}
+      >
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--color-accent)]/20 transition-colors group-hover:bg-[var(--color-accent)]/30">
           <Hotel className="h-5 w-5 text-white" />
         </div>
-        <div className="min-w-0 flex-1 pr-6">
+        <div className={`min-w-0 flex-1 pr-6 ${collapsed ? "hidden" : ""}`}>
           <p className="truncate text-sm font-semibold text-white">
             {currentProperty?.name}
           </p>
@@ -55,7 +63,9 @@ export function PropertySwitcher({
             {properties.length} Properties available
           </p>
         </div>
-        <ChevronDown className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-cyan-50/40 transition-transform group-hover:scale-110" />
+        {!collapsed ? (
+          <ChevronDown className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-cyan-50/40 transition-transform group-hover:scale-110" />
+        ) : null}
       </div>
       <select
         value={currentProperty?.id ?? ""}
