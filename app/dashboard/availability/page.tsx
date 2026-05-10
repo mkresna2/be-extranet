@@ -86,14 +86,15 @@ export default async function AvailabilityPage({
   
   // Limit to a reasonable number of days (e.g., 31) to prevent UI issues
   const displayDays = Math.min(diffDays, 31);
-  const gridTemplateColumns = `180px repeat(${dates.length}, minmax(96px, 1fr))`;
-  const desktopTableMinWidth = `${180 + displayDays * 96}px`;
 
   for (let i = 0; i < displayDays; i++) {
     const d = new Date(start);
     d.setDate(d.getDate() + i);
     dates.push(d);
   }
+
+  const gridTemplateColumns = `180px repeat(${dates.length}, minmax(96px, 1fr))`;
+  const desktopTableMinWidth = `${180 + dates.length * 96}px`;
 
   return (
     <main className="flex-1 min-w-0 rounded-[24px] border border-white bg-white p-4 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">
