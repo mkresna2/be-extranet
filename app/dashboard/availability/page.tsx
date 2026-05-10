@@ -86,6 +86,8 @@ export default async function AvailabilityPage({
   
   // Limit to a reasonable number of days (e.g., 31) to prevent UI issues
   const displayDays = Math.min(diffDays, 31);
+  const gridTemplateColumns = `180px repeat(${dates.length}, minmax(96px, 1fr))`;
+  const desktopTableMinWidth = `${180 + displayDays * 96}px`;
 
   for (let i = 0; i < displayDays; i++) {
     const d = new Date(start);
@@ -125,52 +127,71 @@ export default async function AvailabilityPage({
           todayDate={defaultStart}
         />
 
-        <div className="rounded-[28px] border border-slate-200 overflow-x-auto relative">
-          <div className="min-w-[800px] md:min-w-[1000px]">
-            <div className={`grid border-b border-slate-200 bg-slate-50 sticky top-0 z-10`} style={{ gridTemplateColumns: `150px repeat(${dates.length}, 1fr)` }}>
-                <div className="p-4 border-r border-slate-200 font-medium text-[10px] uppercase tracking-wider text-slate-400 sticky left-0 bg-slate-50 z-20">Room Type</div>
+        <div className="overflow-hidden rounded-[28px] border border-slate-200">
+          <div className="overflow-x-auto">
+            <div className="bg-white" style={{ minWidth: desktopTableMinWidth }}>
+              <div
+                className="grid border-b border-slate-200 bg-slate-50"
+                style={{ gridTemplateColumns }}
+              >
+                <div className="sticky left-0 z-20 border-r border-slate-200 bg-slate-50 p-4 text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                  Room Type
+                </div>
                 {dates.map((date, i) => (
-                  <div key={i} className="p-4 text-center border-r border-slate-200 last:border-r-0 font-medium">
-                    <div className="text-[10px] text-slate-400 uppercase">
+                  <div
+                    key={i}
+                    className="border-r border-slate-200 p-4 text-center font-medium last:border-r-0"
+                  >
+                    <div className="text-[10px] uppercase tracking-[0.18em] text-slate-400">
                       {date.toLocaleDateString('en-US', { month: 'short' })}
                     </div>
-                    <div className="text-base text-slate-900">{date.getDate()}</div>
+                    <div className="mt-1 text-base text-slate-900">{date.getDate()}</div>
+                    <div className="mt-1 text-[11px] text-slate-500">
+                      {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                    </div>
                   </div>
                 ))}
-            </div>
-            <div className="divide-y divide-slate-100">
+              </div>
+              <div className="divide-y divide-slate-100">
                 {roomTypes.length === 0 ? (
                   <div className="p-8 text-center text-slate-500 italic">
                     No room types found for this property or filter.
                   </div>
                 ) : (
                   roomTypes.map((roomType) => (
-                    <div key={roomType.id} className="grid" style={{ gridTemplateColumns: `150px repeat(${dates.length}, 1fr)` }}>
-                      <div className="p-4 border-r border-slate-200 bg-slate-50/50 sticky left-0 z-20 backdrop-blur-sm">
-                          <div className="font-semibold text-slate-900 text-xs truncate break-all" title={roomType.name}>{roomType.name}</div>
-                          <div className="text-[10px] text-slate-500 mt-1 uppercase tracking-tighter">Rates</div>
+                    <div key={roomType.id} className="grid" style={{ gridTemplateColumns }}>
+                      <div className="sticky left-0 z-10 border-r border-slate-200 bg-slate-50/50 p-4 backdrop-blur-sm">
+                        <div className="font-semibold text-slate-900 text-xs break-words" title={roomType.name}>
+                          {roomType.name}
+                        </div>
+                        <div className="mt-1 text-[10px] uppercase tracking-tighter text-slate-500">Rates</div>
                       </div>
                       {dates.map((date, i) => {
                         const dateStr = date.toISOString().split('T')[0];
-                        const rate = roomRates[roomType.id]?.find(r => r.date === dateStr);
-                        
+                        const rate = roomRates[roomType.id]?.find((r) => r.date === dateStr);
+
                         return (
-                          <div key={i} className="p-3 border-r border-slate-200 last:border-r-0 flex flex-col items-center justify-center gap-1 min-w-[70px]">
+                          <div
+                            key={i}
+                            className="flex min-h-[88px] min-w-[96px] flex-col items-center justify-center gap-1 border-r border-slate-200 p-3 last:border-r-0"
+                          >
                             {rate ? (
                               <>
                                 <div className="text-xs font-bold text-[var(--color-accent)]">
                                   {rate.price >= 1000 ? `${(rate.price / 1000).toFixed(0)}k` : rate.price}
                                 </div>
-                                <div className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
-                                  rate.available_rooms > 0 
-                                    ? 'bg-emerald-100 text-emerald-700' 
-                                    : 'bg-rose-100 text-rose-700'
-                                }`}>
+                                <div
+                                  className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
+                                    rate.available_rooms > 0
+                                      ? 'bg-emerald-100 text-emerald-700'
+                                      : 'bg-rose-100 text-rose-700'
+                                  }`}
+                                >
                                   {rate.available_rooms}L
                                 </div>
                               </>
                             ) : (
-                              <div className="text-[10px] text-slate-400 italic">N/A</div>
+                              <div className="text-[10px] italic text-slate-400">N/A</div>
                             )}
                           </div>
                         );
@@ -178,6 +199,7 @@ export default async function AvailabilityPage({
                     </div>
                   ))
                 )}
+              </div>
             </div>
           </div>
         </div>
