@@ -54,7 +54,7 @@ export function RateWindowControls({
     const params = new URLSearchParams(searchParams.toString());
     params.set("start_date", selectedStartDate);
     params.set("range", String(rangeDays));
-    router.push(`/dashboard/rates?${params.toString()}`);
+    router.push(`/dashboard/rates?${params.toString()}`, { scroll: false });
   };
 
   return (
@@ -104,7 +104,8 @@ export function RateWindowControls({
                   <Link
                     key={option}
                     href={href}
-                    className={`snap-start inline-flex min-w-[92px] items-center justify-center rounded-full px-3 py-2 text-xs font-semibold transition ${
+                    scroll={false}
+                    className={`snap-start inline-flex min-w-[92px] items-center justify-center rounded-full px-3 py...[truncated]
                       isActive
                         ? "bg-[var(--color-accent)] text-white shadow-sm"
                         : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -117,6 +118,7 @@ export function RateWindowControls({
 
               <Link
                 href={hrefs.today}
+                scroll={false}
                 className="snap-start inline-flex min-w-[92px] items-center justify-center rounded-full bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-200"
               >
                 Today
@@ -128,6 +130,7 @@ export function RateWindowControls({
             <div className="flex min-w-max gap-2 snap-x snap-mandatory sm:flex-wrap sm:justify-end">
               <Link
                 href={hrefs.prev}
+                scroll={false}
                 className="snap-start inline-flex min-w-[120px] items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -135,6 +138,7 @@ export function RateWindowControls({
               </Link>
               <Link
                 href={hrefs.next}
+                scroll={false}
                 className="snap-start inline-flex min-w-[120px] items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 <span>Next Window</span>
