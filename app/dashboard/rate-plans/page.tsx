@@ -37,48 +37,13 @@ export default async function RatePlansPage() {
   }));
   const ratePlans: RatePlan[] = (await getRatePlans()) || [];
 
-  const groupedPlansMap = new Map<
-    string,
-    {
-      key: string;
-      planIdsByRoomType: Record<string, string>;
-      name: string;
-      description: string | null;
-      cancellation_policy: string | null;
-      meal_plan: string | null;
-      pricing_strategy: RatePlan["pricing_strategy"];
-      adjustment_type: RatePlan["adjustment_type"];
-      adjustment_value: RatePlan["adjustment_value"];
-      roomTypeIds: string[];
-      roomTypeNames: string[];
-      representativePlan: RatePlan;
-    }
-  >();
-
-  for (const plan of ratePlans) {
-    const groupingKey = [
-      plan.name,
-      plan.description ?? "",
-      plan.cancellation_policy ?? "",
-      plan.meal_plan ?? "",
-      plan.pricing_strategy,
-      plan.adjustment_type ?? "",
-      String(plan.adjustment_value ?? ""),
-    ].join("::");
-
-    const roomTypeName = roomTypes.find((roomType) => roomType.id === plan.room_type_id)?.name ?? "Unknown room type";
-
-    const existingGroup = groupedPlansMap.get(groupingKey);
-    if (existingGroup) {
-      existingGroup.roomTypeIds.push(plan.room_type_id);
-      existingGroup.roomTypeNames.push(roomTypeName);
-      existingGroup.planIdsByRoomType[plan.room_type_id] = plan.id;
-      continue;
-    }
-
-    groupedPlansMap.set(groupingKey, {
-      key: groupingKey,
-      planIdsByRoomType: { [plan.room_type_id]: plan.id },
+  const groupedPlans = ratePlans.map((plan) => {
+    const roomTypeIds = plan.room_type_ids.length > 0 ? plan.room_type_ids : [plan.room_type_id];
+    const roomTypeNames = roomTypeIds.map(
+      (roomTypeId) => roomTypes.find((roomType) => roomType.id === roomTypeId)?.name ?? "Unknown room type",
+    );
+    return {
+      key: plan.id,
       name: plan.name,
       description: plan.description,
       cancellation_policy: plan.cancellation_policy,
@@ -86,13 +51,11 @@ export default async function RatePlansPage() {
       pricing_strategy: plan.pricing_strategy,
       adjustment_type: plan.adjustment_type,
       adjustment_value: plan.adjustment_value,
-      roomTypeIds: [plan.room_type_id],
-      roomTypeNames: [roomTypeName],
+      roomTypeIds,
+      roomTypeNames,
       representativePlan: plan,
-    });
-  }
-
-  const groupedPlans = Array.from(groupedPlansMap.values());
+    };
+  });
 
   const derivedPlansCount = ratePlans.filter(
     (plan) => plan.pricing_strategy === "derived_from_bar",
@@ -217,7 +180,6 @@ export default async function RatePlansPage() {
                                     roomTypes={roomTypeOptions}
                                     initialPlan={planGroup.representativePlan}
                                     selectedRoomTypeIds={planGroup.roomTypeIds}
-                                    existingPlanIdsByRoomType={planGroup.planIdsByRoomType}
                                     triggerLabel="Edit"
                                     triggerVariant="ghost"
                                   />
@@ -247,7 +209,6 @@ export default async function RatePlansPage() {
                                 roomTypes={roomTypeOptions}
                                 initialPlan={planGroup.representativePlan}
                                 selectedRoomTypeIds={planGroup.roomTypeIds}
-                                existingPlanIdsByRoomType={planGroup.planIdsByRoomType}
                                 triggerLabel="Edit"
                                 triggerVariant="ghost"
                               />

@@ -159,7 +159,10 @@ export default async function RatesPage({
   const roomTypesWithPlans: RoomTypeWithPlans[] = await Promise.all(
     roomTypes.map(async (roomType) => {
       const matchingPlans = ratePlans.filter(
-        (plan) => plan.room_type_id === roomType.id,
+        (plan) => {
+          const roomTypeIds = plan.room_type_ids.length > 0 ? plan.room_type_ids : [plan.room_type_id];
+          return roomTypeIds.includes(roomType.id);
+        },
       );
       const allPlans: Array<RatePlan | null> = [null, ...matchingPlans];
 

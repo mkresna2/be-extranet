@@ -18,7 +18,6 @@ type RatePlanEditorProps = {
   roomTypes: RoomTypeOption[];
   initialPlan?: RatePlan | null;
   selectedRoomTypeIds?: string[];
-  existingPlanIdsByRoomType?: Record<string, string>;
   triggerLabel?: string;
   triggerVariant?: "primary" | "secondary" | "ghost";
 };
@@ -26,17 +25,18 @@ type RatePlanEditorProps = {
 function buildInitialValues(
   plan?: RatePlan | null,
   selectedRoomTypeIds: string[] = [],
-  existingPlanIdsByRoomType: Record<string, string> = {},
 ) {
   return {
     room_type_ids:
       selectedRoomTypeIds.length > 0
         ? selectedRoomTypeIds
-        : plan?.room_type_id
-          ? [plan.room_type_id]
-          : [],
+        : plan?.room_type_ids?.length
+          ? plan.room_type_ids
+          : plan?.room_type_id
+            ? [plan.room_type_id]
+            : [],
     original_name: plan?.name ?? "",
-    existing_plan_ids_by_room_type: existingPlanIdsByRoomType,
+    existing_plan_ids_by_room_type: {},
     name: plan?.name ?? "",
     description: plan?.description ?? "",
     cancellation_policy: plan?.cancellation_policy ?? "",
@@ -66,7 +66,6 @@ function sanitizePayload(values: ReturnType<typeof buildInitialValues>): RatePla
   const payload: RatePlanPayload = {
     room_type_ids: values.room_type_ids,
     original_name: values.original_name,
-    existing_plan_ids_by_room_type: values.existing_plan_ids_by_room_type,
     name: values.name,
     description: values.description,
     cancellation_policy: values.cancellation_policy,
@@ -86,7 +85,6 @@ export function RatePlanEditor({
   roomTypes,
   initialPlan = null,
   selectedRoomTypeIds = [],
-  existingPlanIdsByRoomType = {},
   triggerLabel,
   triggerVariant = "primary",
 }: RatePlanEditorProps) {
@@ -95,12 +93,14 @@ export function RatePlanEditor({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [values, setValues] = useState(() =>
-    buildInitialValues(initialPlan, selectedRoomTypeIds, existingPlanIdsByRoomType),
+    buildInitialValues(initialPlan, selectedRoomTypeIds),
   );
 
   const isEditing = Boolean(initialPlan);
   const selectedPricingStrategy = values.pricing_strategy;
   const selectedAdjustmentType = values.adjustment_type;
+  const linkedRoomTypeCount = values.room_type_ids.length;
+  const linkedRoomTypeLabel = `${linkedRoomTypeCount} room type${linkedRoomTypeCount === 1 ? "" : "s"} linked`;
 
   const triggerText =
     triggerLabel || (isEditing ? "Edit Plan" : "Add Rate Plan");
@@ -119,7 +119,7 @@ export function RatePlanEditor({
 
   function openEditor() {
     setValues(
-      buildInitialValues(initialPlan, selectedRoomTypeIds, existingPlanIdsByRoomType),
+      buildInitialValues(initialPlan, selectedRoomTypeIds),
     );
     setError(null);
     setIsOpen(true);
@@ -193,6 +193,11 @@ export function RatePlanEditor({
                   <p className="mt-2 text-sm leading-6 text-slate-500">
                     Gunakan mode BAR-derived untuk membuat plan seperti Non-Refundable atau Bed & Breakfast otomatis mengikuti BAR dengan potongan persen atau rupiah.
                   </p>
+                  {isEditing ? (
+                    <div className="mt-3 inline-flex w-fit rounded-full bg-[var(--color-accent)]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent)]">
+                      {linkedRoomTypeLabel}
+                    </div>
+                  ) : null}
                 </div>
                 <button
                   type="button"

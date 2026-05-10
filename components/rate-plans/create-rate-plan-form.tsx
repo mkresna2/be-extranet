@@ -21,8 +21,9 @@ export function CreateRatePlanForm({ roomTypes }: { roomTypes: RoomType[] }) {
     setError(null);
 
     const formData = new FormData(event.currentTarget);
+    const roomTypeId = formData.get("room_type_id") as string;
     const data: RatePlanPayload = {
-      room_type_id: formData.get("room_type_id") as string,
+      room_type_ids: roomTypeId ? [roomTypeId] : [],
       name: formData.get("name") as string,
       description: formData.get("description") as string,
       cancellation_policy: formData.get("cancellation_policy") as string,
@@ -34,8 +35,8 @@ export function CreateRatePlanForm({ roomTypes }: { roomTypes: RoomType[] }) {
       await createRatePlan(data);
       router.refresh();
       (event.target as HTMLFormElement).reset();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create rate plan");
     } finally {
       setIsLoading(false);
     }

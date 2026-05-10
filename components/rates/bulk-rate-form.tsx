@@ -3,6 +3,8 @@
 import { useActionState, useMemo, useState } from "react";
 import { CalendarDays, Info, Layers3, Wallet } from "lucide-react";
 import { updateRates, RateActionState } from "@/app/actions/rates";
+import { type RatePlan } from "@/app/actions/rate-plans";
+import { type RoomType } from "@/app/actions/room-types";
 import { SubmitButton } from "@/components/auth/submit-button";
 
 const initialState: RateActionState = { status: "idle" };
@@ -11,8 +13,8 @@ export function BulkRateForm({
   roomTypes,
   ratePlans,
 }: {
-  roomTypes: any[];
-  ratePlans: any[];
+  roomTypes: RoomType[];
+  ratePlans: RatePlan[];
 }) {
   const [state, formAction] = useActionState(updateRates, initialState);
   const defaultRoomTypeId = roomTypes[0]?.id ?? "";
@@ -20,9 +22,12 @@ export function BulkRateForm({
 
   const filteredRatePlans = useMemo(
     () =>
-      ratePlans.filter(
-        (ratePlan) => ratePlan.room_type_id === selectedRoomTypeId,
-      ),
+      ratePlans.filter((ratePlan) => {
+        const linkedRoomTypeIds = Array.isArray(ratePlan.room_type_ids) && ratePlan.room_type_ids.length > 0
+          ? ratePlan.room_type_ids
+          : [ratePlan.room_type_id];
+        return linkedRoomTypeIds.includes(selectedRoomTypeId);
+      }),
     [ratePlans, selectedRoomTypeId],
   );
 
