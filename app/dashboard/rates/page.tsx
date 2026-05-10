@@ -1,10 +1,19 @@
-import { BarChart3, CalendarRange, Layers3 } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, ArrowRight, BarChart3, CalendarRange, Layers3 } from "lucide-react";
 import { requireSession } from "@/lib/auth";
 import { getRoomTypes } from "@/app/actions/room-types";
 import { getRoomRates } from "@/app/actions/rates";
 import { getRatePlans } from "@/app/actions/rate-plans";
 import { BulkRateForm } from "@/components/rates/bulk-rate-form";
 import { SyncButton } from "@/components/inventory/sync-button";
+
+const RANGE_OPTIONS = [7, 14, 30] as const;
+const DEFAULT_RANGE_DAYS = 7;
+
+type RatesPageSearchParams = Promise<{
+  start_date?: string;
+  range?: string;
+}>;
 
 function formatCurrency(price?: number) {
   if (typeof price !== "number") return "Not set";
@@ -42,17 +51,63 @@ function formatFullDate(date: Date) {
   });
 }
 
-export default async function RatesPage() {
+function formatIsoDate(date: Date) {
+  return date.toISOString().split("T")[0];
+}
+
+function addDays(date: Date, days: number) {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+}
+
+function parseDateParam(value?: string) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+}
+
+function parseRangeParam(value?: string) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || !RANGE_OPTIONS.includes(parsed as (typeof RANGE_OPTIONS)[number])) {
+    return DEFAULT_RANGE_DAYS;
+  }
+  return parsed as (typeof RANGE_OPTIONS)[number];
+}
+
+function buildRatesHref(startDate: string, rangeDays: number) {
+  const params = new URLSearchParams();
+  params.set("start_date", startDate);
+  params.set("range", String(rangeDays));
+  return `/dashboard/rates?${params.toString()}`;
+}
+
+export default async function RatesPage({
+  searchParams,
+}: {
+  searchParams: RatesPageSearchParams;
+}) {
   const session = await requireSession();
+  const { start_date: startDateParam, range: rangeParam } = await searchParams;
   const roomTypes = await getRoomTypes();
   const ratePlans = await getRatePlans();
 
   const today = new Date();
-  const nextWeek = new Date();
-  nextWeek.setDate(today.getDate() + 6);
+  const normalizedToday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
+  const startDate = parseDateParam(startDateParam) ?? normalizedToday;
+  const rangeDays = parseRangeParam(rangeParam);
+  const endDate = addDays(startDate, rangeDays - 1);
 
-  const startDateStr = today.toISOString().split("T")[0];
-  const endDateStr = nextWeek.toISOString().split("T")[0];
+  const startDateStr = formatIsoDate(startDate);
+  const endDateStr = formatIsoDate(endDate);
+  const previousWindowStart = formatIsoDate(addDays(startDate, -rangeDays));
+  const nextWindowStart = formatIsoDate(addDays(startDate, rangeDays));
+  const activeWindowLabel = `${formatFullDate(startDate)} — ${formatFullDate(endDate)}`;
 
   const roomTypesWithPlans = await Promise.all(
     roomTypes.map(async (roomType: any) => {
@@ -79,10 +134,8 @@ export default async function RatesPage() {
   );
 
   const dates: Date[] = [];
-  for (let i = 0; i < 7; i += 1) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
-    dates.push(date);
+  for (let i = 0; i < rangeDays; i += 1) {
+    dates.push(addDays(startDate, i));
   }
 
   const hasRoomTypes = roomTypesWithPlans.length > 0;
@@ -163,7 +216,7 @@ export default async function RatesPage() {
             </div>
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                7-Day Window
+                {rangeDays}-Day Window
               </p>
               <p className="mt-1 text-sm font-semibold text-slate-950 sm:text-base">
                 {configuredRates} configured cells
@@ -176,22 +229,84 @@ export default async function RatesPage() {
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_360px]">
         <section className="min-w-0 space-y-4">
           <div className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="space-y-1">
-                <h3 className="text-lg font-semibold text-slate-950">
-                  Live rate grid
-                </h3>
-                <p className="text-sm text-slate-500">
-                  Review the next 7 days of prices and availability before running bulk updates.
-                </p>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="space-y-1">
+                  <h3 className="text-lg font-semibold text-slate-950">
+                    Live rate grid
+                  </h3>
+                  <p className="text-sm text-slate-500">
+                    Review {rangeDays} days of prices and availability before running bulk updates.
+                  </p>
+                </div>
+                <div className="inline-flex w-full flex-wrap items-center gap-2 text-xs font-medium text-slate-500 md:w-auto md:justify-end">
+                  <span className="rounded-full bg-white px-3 py-1.5 shadow-sm ring-1 ring-slate-200">
+                    Base BAR always shown first
+                  </span>
+                  <span className="rounded-full bg-white px-3 py-1.5 shadow-sm ring-1 ring-slate-200">
+                    Empty cells mean no rate is set yet
+                  </span>
+                </div>
               </div>
-              <div className="inline-flex w-full flex-wrap items-center gap-2 text-xs font-medium text-slate-500 md:w-auto md:justify-end">
-                <span className="rounded-full bg-white px-3 py-1.5 shadow-sm ring-1 ring-slate-200">
-                  Base BAR always shown first
-                </span>
-                <span className="rounded-full bg-white px-3 py-1.5 shadow-sm ring-1 ring-slate-200">
-                  Empty cells mean no rate is set yet
-                </span>
+
+              <div className="rounded-[24px] border border-slate-200 bg-white p-3 sm:p-4">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      Date Window
+                    </p>
+                    <p className="text-sm font-semibold text-slate-950 sm:text-base">
+                      {activeWindowLabel}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Geser window untuk melihat tanggal lain, atau pilih range tampilan yang lebih panjang.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-3 lg:items-end">
+                    <div className="flex flex-wrap gap-2">
+                      {RANGE_OPTIONS.map((option) => {
+                        const isActive = option === rangeDays;
+                        return (
+                          <Link
+                            key={option}
+                            href={buildRatesHref(startDateStr, option)}
+                            className={`inline-flex items-center justify-center rounded-full px-3 py-2 text-xs font-semibold transition ${
+                              isActive
+                                ? "bg-[var(--color-accent)] text-white shadow-sm"
+                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                            }`}
+                          >
+                            {option} Hari
+                          </Link>
+                        );
+                      })}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
+                      <Link
+                        href={buildRatesHref(previousWindowStart, rangeDays)}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                        <span>Prev</span>
+                      </Link>
+                      <Link
+                        href={buildRatesHref(nextWindowStart, rangeDays)}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                      >
+                        <span>Next</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                      <Link
+                        href={buildRatesHref(formatIsoDate(normalizedToday), rangeDays)}
+                        className="col-span-2 inline-flex items-center justify-center rounded-2xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 sm:col-auto"
+                      >
+                        Today
+                      </Link>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -230,7 +345,7 @@ export default async function RatesPage() {
                         >
                           <div className="flex flex-col gap-2 border-b border-slate-200 pb-3">
                             <div>
-                              <p className="text-sm font-semibold text-[var(--color-accent)] break-words">
+                              <p className="break-words text-sm font-semibold text-[var(--color-accent)]">
                                 {planRow.plan?.name || "Base BAR"}
                               </p>
                               <p className="mt-1 text-xs leading-5 text-slate-500">
@@ -242,7 +357,7 @@ export default async function RatesPage() {
 
                           <div className="mt-3 grid gap-2 sm:grid-cols-2">
                             {dates.map((date, index) => {
-                              const dateStr = date.toISOString().split("T")[0];
+                              const dateStr = formatIsoDate(date);
                               const rate = planRow.rates.find(
                                 (entry: any) => entry.date === dateStr,
                               );
@@ -295,7 +410,10 @@ export default async function RatesPage() {
 
               <div className="hidden min-w-0 overflow-hidden rounded-[28px] border border-slate-200 md:block">
                 <div className="overflow-x-auto">
-                  <div className="min-w-[980px] bg-white">
+                  <div
+                    className="bg-white"
+                    style={{ minWidth: `${220 + dates.length * 108}px` }}
+                  >
                     <div
                       className="grid border-b border-slate-200 bg-slate-50"
                       style={{
@@ -350,7 +468,7 @@ export default async function RatesPage() {
                               </div>
 
                               {dates.map((date, cellIndex) => {
-                                const dateStr = date.toISOString().split("T")[0];
+                                const dateStr = formatIsoDate(date);
                                 const rate = planRow.rates.find(
                                   (entry: any) => entry.date === dateStr,
                                 );
