@@ -74,7 +74,7 @@ export default function DashboardLayoutClient({
         </button>
       </header>
 
-      <div className="mx-auto flex min-h-[calc(100vh-64px)] max-w-[1600px] flex-col gap-6 p-4 lg:min-h-screen lg:flex-row lg:p-6">
+      <div className="mx-auto flex min-h-[calc(100vh-64px)] max-w-[1600px] flex-col gap-6 p-2 sm:p-4 lg:min-h-screen lg:flex-row lg:p-6">
         {/* Sidebar Backdrop */}
         {isSidebarOpen && (
           <div
@@ -85,7 +85,7 @@ export default function DashboardLayoutClient({
 
         {/* Sidebar */}
         <aside
-          className={`fixed inset-y-0 left-0 z-50 flex w-72 transform flex-col justify-between bg-[linear-gradient(180deg,_#0b4c5e,_#0a3441)] p-6 text-white transition-transform duration-300 lg:static lg:w-80 lg:translate-x-0 lg:rounded-[32px] lg:shadow-[0_24px_80px_rgba(11,76,94,0.25)] ${
+          className={`fixed inset-y-0 left-0 z-50 flex w-[280px] transform flex-col justify-between bg-[linear-gradient(180deg,_#0b4c5e,_#0a3441)] p-6 text-white transition-transform duration-300 ease-in-out lg:static lg:w-80 lg:translate-x-0 lg:rounded-[32px] lg:shadow-[0_24px_80px_rgba(11,76,94,0.25)] ${
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >

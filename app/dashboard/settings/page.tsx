@@ -77,7 +77,7 @@ export default async function SettingsPage({
                 </div>
               </div>
 
-              <div className="overflow-hidden rounded-3xl border border-slate-200">
+            <div className="overflow-hidden rounded-3xl border border-slate-200 hidden md:block">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 text-slate-500">
                     <tr>
@@ -104,6 +104,27 @@ export default async function SettingsPage({
                     </tr>
                   </tbody>
                 </table>
+              </div>
+
+              {/* Mobile Role Cards */}
+              <div className="space-y-4 md:hidden">
+                {[
+                  { role: "Owner", desc: "Full administrative access to property and billing.", users: 1 },
+                  { role: "Manager", desc: "Can manage rates, availability, and bookings.", users: 0 },
+                  { role: "Staff", desc: "View-only access to bookings and guest lists.", users: 0 },
+                ].map((item) => (
+                  <div key={item.role} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="flex items-center justify-between border-b border-slate-50 pb-2">
+                      <p className="font-bold text-slate-900">{item.role}</p>
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+                        {item.users} Users
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                      {item.desc}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           )}

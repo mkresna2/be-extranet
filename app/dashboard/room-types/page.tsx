@@ -13,8 +13,8 @@ export default async function RoomTypesPage() {
   );
 
   return (
-    <main className="flex-1 space-y-4 p-4 md:space-y-6 md:p-6 lg:p-8">
-      <section className="rounded-[24px] border border-white bg-white p-4 shadow-[0_24px_80px_rgba(15,23,42,0.08)] md:rounded-[32px] md:p-6">
+    <main className="flex-1 space-y-4 p-2 sm:p-4 md:space-y-6 md:p-6 lg:p-8 min-w-0">
+      <section className="rounded-[24px] border border-white bg-white p-3 shadow-[0_24px_80px_rgba(15,23,42,0.08)] md:rounded-[32px] md:p-6">
         <div className="flex flex-col gap-6 border-b border-slate-100 pb-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
             <p className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--color-accent)] md:text-sm">

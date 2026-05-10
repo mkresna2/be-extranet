@@ -93,14 +93,14 @@ export default async function DashboardPage() {
       ];
 
   return (
-    <main className="flex-1">
-      <section className="rounded-[24px] border border-white bg-white p-4 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">
+    <main className="flex-1 min-w-0">
+      <section className="rounded-[24px] border border-white bg-white p-3 shadow-[0_24px_80px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">
         <div className="flex flex-col gap-6 border-b border-slate-100 pb-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-2">
+          <div className="space-y-2 min-w-0">
             <p className="text-sm font-medium uppercase tracking-[0.22em] text-[var(--color-accent)]">
               Dashboard
             </p>
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl truncate">
               Welcome, {session.user?.fullName ?? "User"}
             </h2>
             <p className="max-w-2xl text-sm leading-6 text-slate-500">
@@ -112,7 +112,7 @@ export default async function DashboardPage() {
 
           <div className="inline-flex w-fit items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
             <CalendarClock className="h-4 w-4 text-[var(--color-accent)]" />
-            Session loaded from API
+            <span className="truncate">Session loaded from API</span>
           </div>
         </div>
 

@@ -42,7 +42,7 @@ export default async function BookingsPage() {
         </p>
       </div>
 
-      <div className="mt-8 overflow-x-auto rounded-3xl border border-slate-200">
+      <div className="mt-8 overflow-x-auto rounded-3xl border border-slate-200 hidden md:block">
         <div className="min-w-[700px] lg:min-w-full">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-500">
@@ -59,7 +59,7 @@ export default async function BookingsPage() {
                   <tr key={booking.id} className="bg-white hover:bg-slate-50">
                     <td className="px-6 py-4">
                       <p className="font-semibold text-slate-900">{booking.guest_name}</p>
-                      <p className="text-xs text-slate-500">{booking.booking_ref}</p>
+                      <p className="text-xs text-slate-500 break-all">{booking.booking_ref}</p>
                     </td>
                     <td className="px-6 py-4 text-slate-600">
                       {booking.check_in} - {booking.check_out}
@@ -88,6 +88,43 @@ export default async function BookingsPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="mt-6 space-y-4 md:hidden">
+        {bookings.length > 0 ? (
+          bookings.map((booking: any) => (
+            <div key={booking.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center justify-between border-b border-slate-50 pb-3">
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-slate-900 truncate">{booking.guest_name}</p>
+                  <p className="text-xs text-slate-500 break-all">{booking.booking_ref}</p>
+                </div>
+                <span className={`ml-2 flex-shrink-0 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                  booking.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' :
+                  booking.status === 'pending_payment' ? 'bg-amber-100 text-amber-700' :
+                  'bg-slate-100 text-slate-700'
+                }`}>
+                  {booking.status}
+                </span>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Check-in / Out</p>
+                  <p className="mt-0.5 text-xs text-slate-600">{booking.check_in} - {booking.check_out}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Total Price</p>
+                  <p className="mt-0.5 text-sm font-bold text-slate-900">${booking.total_price.toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="rounded-2xl border-2 border-dashed border-slate-100 p-8 text-center text-slate-400">
+            No bookings found.
+          </div>
+        )}
       </div>
       <p className="mt-4 text-center text-xs text-slate-400 lg:hidden">
         Swipe horizontally to see more booking details.
