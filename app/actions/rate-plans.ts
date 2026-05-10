@@ -130,7 +130,7 @@ function sanitizeRatePlanPayload(data: RatePlanPayload) {
     cancellation_policy: data.cancellation_policy?.trim() || undefined,
     meal_plan: data.meal_plan?.trim() || undefined,
     pricing_strategy: pricingStrategy,
-    adjustment_type: adjustmentType === "" ? undefined : adjustmentType,
+    adjustment_type: adjustmentType || undefined,
     adjustment_value: adjustmentValue,
   };
 }
